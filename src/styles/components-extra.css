@@ -257,38 +257,109 @@
 .ic-step svg { width: 16px; height: 16px; animation: ic-pop var(--ic-dur) var(--ic-ease-spring) both; }
 .ic-step--done { background: var(--ic-primary); color: var(--ic-on-primary); }
 
-/* ---------- Campos: select con chevron, números sin flechas, error ---------- */
-.ic-field--select::after {
-  content: "";
-  position: absolute;
-  right: var(--ic-space-5);
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--ic-text-muted);
-  border-bottom: 2px solid var(--ic-text-muted);
-  transform: translateY(-75%) rotate(45deg);
-  pointer-events: none;
-  transition: border-color var(--ic-transition);
+/* ---------- Campos con borde y etiqueta encima ----------
+   <div class="ic-field ic-field--full ic-field--stack">
+     <label class="ic-field__label" for="x">Monto</label>
+     <div class="ic-field__control [ic-field__control--select]">
+       <span class="ic-field__prefix">$</span>   (opcional)
+       <input class="ic-input" id="x" placeholder="0.00">
+     </div>
+     <span class="ic-field__hint">Ayuda</span>   (opcional)
+   </div>
+   Sustituye al estilo "filled" con etiqueta flotante de components.css. */
+:root {
+  --ic-field-h:       48px;
+  --ic-field-ring:    0 0 0 4px color-mix(in srgb, var(--ic-primary) 18%, transparent);
+  --ic-field-ring-error: 0 0 0 4px color-mix(in srgb, var(--ic-danger) 16%, transparent);
 }
-.ic-field--select:focus-within::after { border-color: var(--ic-primary); }
+.ic-field--stack { display: flex; flex-direction: column; gap: var(--ic-space-2); }
+.ic-field--stack .ic-field__label {
+  position: static;
+  transform: none;
+  font-size: var(--ic-fs-sm);
+  font-weight: var(--ic-fw-medium);
+  color: var(--ic-text-strong);
+  pointer-events: auto;
+  transition: color var(--ic-transition);
+}
+.ic-field__control { position: relative; }
+.ic-field--stack .ic-input,
+.ic-field--stack .ic-select {
+  height: var(--ic-field-h);
+  padding: 0 var(--ic-space-4);
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-border);
+  border-radius: var(--ic-radius-lg);
+  font-size: var(--ic-fs-md);
+  color: var(--ic-text-strong);
+  box-shadow: var(--ic-shadow-sm);
+  transition: border-color var(--ic-transition), box-shadow var(--ic-transition), background var(--ic-transition);
+}
+.ic-field--stack .ic-input::placeholder { color: var(--ic-text-disabled); opacity: 1; }
+.ic-field--stack .ic-input:hover,
+.ic-field--stack .ic-select:hover:not(:disabled) { background: var(--ic-surface); border-color: var(--ic-text-disabled); }
+.ic-field--stack .ic-input:focus,
+.ic-field--stack .ic-select:focus {
+  outline: none;
+  border: 1px solid var(--ic-primary);
+  box-shadow: var(--ic-field-ring);
+}
+.ic-field--stack:focus-within .ic-field__label { color: var(--ic-primary); }
+.ic-field--stack .ic-field__hint { margin-top: 0; line-height: 1.4; }
+
+/* Prefijo (símbolo de moneda) dentro del campo. */
+.ic-field__prefix {
+  position: absolute;
+  left: var(--ic-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--ic-fs-md);
+  font-weight: var(--ic-fw-medium);
+  color: var(--ic-text-strong);
+  pointer-events: none;
+}
+.ic-field__prefix + .ic-input { padding-left: var(--ic-space-8); }
+
+/* Select: sin flecha nativa, con chevrons arriba/abajo. */
 .ic-select {
   -webkit-appearance: none;
   appearance: none;
-  padding-right: var(--ic-space-10);
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.ic-select:invalid { color: var(--ic-text-muted); }
+.ic-field--stack .ic-select { padding-right: var(--ic-space-10); }
+.ic-select:invalid { color: var(--ic-text-disabled); }
 .ic-select option { color: var(--ic-text-strong); }
+.ic-select:disabled { background: var(--ic-surface-alt); color: var(--ic-text-muted); cursor: not-allowed; box-shadow: none; }
+.ic-field__control--select::before,
+.ic-field__control--select::after {
+  content: "";
+  position: absolute;
+  right: var(--ic-space-4);
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--ic-text-muted);
+  border-bottom: 1.5px solid var(--ic-text-muted);
+  pointer-events: none;
+  transition: border-color var(--ic-transition);
+}
+.ic-field__control--select::before { top: calc(50% - 6px); transform: rotate(-135deg); }
+.ic-field__control--select::after  { top: calc(50% + 0px); transform: rotate(45deg); }
+.ic-field--stack:focus-within .ic-field__control--select::before,
+.ic-field--stack:focus-within .ic-field__control--select::after { border-color: var(--ic-primary); }
 
 .ic-input[type="number"] { -moz-appearance: textfield; appearance: textfield; font-variant-numeric: tabular-nums; }
 .ic-input[type="number"]::-webkit-inner-spin-button,
 .ic-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-.ic-field--error .ic-input,
-.ic-field--error .ic-select { border-bottom: 2px solid var(--ic-danger); }
-.ic-field--error.ic-field--select::after { border-color: var(--ic-danger); }
+/* Error: borde y halo rojos, etiqueta y ayuda en rojo. */
+.ic-field--stack.ic-field--error .ic-input,
+.ic-field--stack.ic-field--error .ic-select { border-color: var(--ic-danger); }
+.ic-field--stack.ic-field--error .ic-input:focus,
+.ic-field--stack.ic-field--error .ic-select:focus { box-shadow: var(--ic-field-ring-error); }
+.ic-field--stack.ic-field--error .ic-field__label { color: var(--ic-danger); }
+.ic-field--error .ic-field__control--select::before,
+.ic-field--error .ic-field__control--select::after { border-color: var(--ic-danger); }
 
 /* ---------- Listas dentro de alertas / resultado ---------- */
 .ic-list {
@@ -533,11 +604,13 @@
 .ic-login__app { margin: 0; font-size: var(--ic-fs-sm); color: var(--ic-text-muted); }
 .ic-login__title { margin: var(--ic-space-2) 0 0; }
 .ic-login__lead { margin: 0; }
-.ic-login__clave .ic-input { padding-right: 56px; }
+.ic-login__clave .ic-input { padding-right: 52px; }
 .ic-login__ver {
   position: absolute;
   top: 50%;
-  right: var(--ic-space-2);
+  right: var(--ic-space-1);
+  width: 40px;
+  height: 40px;
   transform: translateY(-50%);
   color: var(--ic-text-muted);
 }
@@ -607,4 +680,6 @@
   .ic-choice { border-color: var(--ic-border-strong); }
   .ic-choice:hover, .ic-choice:focus-visible, .ic-choice--current { border-color: var(--ic-primary); }
   .ic-form-group + .ic-form-group { border-top-color: var(--ic-border-strong); }
+  .ic-field--stack .ic-input,
+  .ic-field--stack .ic-select { border-color: var(--ic-border-strong); }
 }

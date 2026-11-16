@@ -53,25 +53,46 @@ type CampoProps = {
   /** Valor del atributo autocomplete del navegador. */
   autocompletar?: string;
   invalido?: boolean;
+  placeholder?: string;
+  /** Texto fijo dentro del campo, a la izquierda (p. ej. el símbolo de moneda). */
+  prefijo?: string;
+  /** Texto de ayuda bajo el campo. */
+  ayuda?: string;
 };
 
 const positivo = (v: string) => Number(v) > 0;
 
-/** Input "filled" con etiqueta flotante. placeholder=" " es obligatorio para que la etiqueta flote. */
-function Campo({ id, etiqueta, valor, onChange, numerico, tipo, autocompletar, invalido }: CampoProps) {
+/** Símbolo corto de la moneda configurada ("$" para USD). */
+const SIMBOLO_MONEDA =
+  new Intl.NumberFormat(MONEDA.locale, { style: "currency", currency: MONEDA.codigo, currencyDisplay: "narrowSymbol" })
+    .formatToParts(0)
+    .find((p) => p.type === "currency")?.value ?? MONEDA.codigo;
+
+/** Ayuda bajo el campo, enlazada con aria-describedby. */
+function Ayuda({ id, texto }: { id: string; texto?: string }) {
+  return texto ? <span id={`${id}-ayuda`} className="ic-field__hint">{texto}</span> : null;
+}
+
+/** Input con borde y etiqueta encima. */
+function Campo({ id, etiqueta, valor, onChange, numerico, tipo, autocompletar, invalido, placeholder, prefijo, ayuda }: CampoProps) {
   return (
-    <div className={`ic-field ic-field--full${invalido ? " ic-field--error" : ""}`}>
-      <input
-        id={id}
-        className="ic-input"
-        placeholder=" "
-        value={valor}
-        aria-invalid={invalido || undefined}
-        onChange={(e) => onChange(e.target.value)}
-        autoComplete={autocompletar}
-        {...(numerico ? { type: "number", inputMode: "decimal" as const, min: 0, step: "0.01" } : tipo ? { type: tipo } : {})}
-      />
+    <div className={`ic-field ic-field--full ic-field--stack${invalido ? " ic-field--error" : ""}`}>
       <label className="ic-field__label" htmlFor={id}>{etiqueta}</label>
+      <div className="ic-field__control">
+        {prefijo && <span className="ic-field__prefix" aria-hidden="true">{prefijo}</span>}
+        <input
+          id={id}
+          className="ic-input"
+          placeholder={placeholder ?? (numerico ? "0.00" : undefined)}
+          value={valor}
+          aria-invalid={invalido || undefined}
+          aria-describedby={ayuda ? `${id}-ayuda` : undefined}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={autocompletar}
+          {...(numerico ? { type: "number", inputMode: "decimal" as const, min: 0, step: "0.01" } : tipo ? { type: tipo } : {})}
+        />
+      </div>
+      <Ayuda id={id} texto={ayuda} />
     </div>
   );
 }
@@ -86,28 +107,33 @@ type SelectorProps = {
   /** Texto de la opción vacía cuando no se puede elegir (cargando, error, sin opciones); deshabilita el menú. */
   estado?: string | null;
   ocupado?: boolean;
+  ayuda?: string;
 };
 
-/** Menú desplegable "filled" con etiqueta flotante. */
-function Selector({ id, etiqueta, valor, onChange, opciones, invalido, estado, ocupado }: SelectorProps) {
+/** Menú desplegable con borde, etiqueta encima y chevrons arriba/abajo. */
+function Selector({ id, etiqueta, valor, onChange, opciones, invalido, estado, ocupado, ayuda }: SelectorProps) {
   return (
-    <div className={`ic-field ic-field--full ic-field--select${invalido ? " ic-field--error" : ""}`}>
-      <select
-        id={id}
-        className="ic-select"
-        required
-        disabled={Boolean(estado)}
-        aria-invalid={invalido || undefined}
-        aria-busy={ocupado || undefined}
-        value={valor}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">{estado || "Seleccionar…"}</option>
-        {opciones.map((o) => (
-          <option key={o.valor} value={o.valor}>{o.texto}</option>
-        ))}
-      </select>
+    <div className={`ic-field ic-field--full ic-field--stack${invalido ? " ic-field--error" : ""}`}>
       <label className="ic-field__label" htmlFor={id}>{etiqueta}</label>
+      <div className="ic-field__control ic-field__control--select">
+        <select
+          id={id}
+          className="ic-select"
+          required
+          disabled={Boolean(estado)}
+          aria-invalid={invalido || undefined}
+          aria-busy={ocupado || undefined}
+          aria-describedby={ayuda ? `${id}-ayuda` : undefined}
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          <option value="">{estado || "Seleccionar…"}</option>
+          {opciones.map((o) => (
+            <option key={o.valor} value={o.valor}>{o.texto}</option>
+          ))}
+        </select>
+      </div>
+      <Ayuda id={id} texto={ayuda} />
     </div>
   );
 }
@@ -181,13 +207,26 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
       <fieldset className="ic-form-group">
         <Paso n={1} titulo="Cliente" completo={clienteCompleto} extra={<span className="ic-subtitle__hint">Opcional</span>} />
         <div className="ic-form-grid">
-          <Campo id="cliente" etiqueta="Nombre" valor={datos.cliente} onChange={(v) => set("cliente", v)} />
-          <Campo id="identificacion" etiqueta="Identificación" valor={datos.identificacion} onChange={(v) => set("identificacion", v)} />
+          <Campo
+            id="cliente"
+            etiqueta="Nombre"
+            placeholder="Nombre completo"
+            valor={datos.cliente}
+            onChange={(v) => set("cliente", v)}
+          />
+          <Campo
+            id="identificacion"
+            etiqueta="Identificación"
+            placeholder="Cédula o pasaporte"
+            valor={datos.identificacion}
+            onChange={(v) => set("identificacion", v)}
+          />
           <Campo
             id="telefono"
             etiqueta="Teléfono"
             tipo="tel"
             autocompletar="tel"
+            placeholder="6000-0000"
             valor={datos.telefono}
             onChange={(v) => set("telefono", v)}
           />
@@ -196,6 +235,7 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
             etiqueta="Correo"
             tipo="email"
             autocompletar="email"
+            placeholder="ejemplo@correo.com"
             valor={datos.correo}
             onChange={(v) => set("correo", v)}
             invalido={marcar && correoInvalido}
@@ -208,26 +248,32 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
         <div className="ic-form-grid">
           <Campo
             id="ingresoBruto"
-            etiqueta={`Ingreso bruto (${MONEDA.codigo})`}
+            etiqueta="Ingreso bruto"
             valor={datos.ingresoBruto}
             onChange={(v) => set("ingresoBruto", v)}
             numerico
+            prefijo={SIMBOLO_MONEDA}
+            ayuda={`Mensual, en ${MONEDA.codigo}`}
             invalido={marcar && !positivo(datos.ingresoBruto)}
           />
           <Campo
             id="ingresoNeto"
-            etiqueta={`Ingreso neto (${MONEDA.codigo})`}
+            etiqueta="Ingreso neto"
             valor={datos.ingresoNeto}
             onChange={(v) => set("ingresoNeto", v)}
             numerico
-            invalido={marcar && (!positivo(datos.ingresoNeto) || netoMayorQueBruto)}
+            prefijo={SIMBOLO_MONEDA}
+            ayuda={netoMayorQueBruto ? "No puede ser mayor que el ingreso bruto" : "Se usa para la relación cuota / ingreso"}
+            invalido={(marcar && !positivo(datos.ingresoNeto)) || netoMayorQueBruto}
           />
           <Campo
             id="saldoActual"
-            etiqueta={`Saldo actual (${MONEDA.codigo})`}
+            etiqueta="Saldo actual"
             valor={datos.saldoActual}
             onChange={(v) => set("saldoActual", v)}
             numerico
+            prefijo={SIMBOLO_MONEDA}
+            ayuda="Monto a financiar"
             invalido={marcar && !positivo(datos.saldoActual)}
           />
         </div>
@@ -282,6 +328,7 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
             valor={datos.promotor}
             onChange={(v) => set("promotor", v as DatosFormulario["promotor"])}
             opciones={PROMOTOR_INDEPENDIENTE.map((o) => ({ valor: o.id, texto: o.etiqueta }))}
+            ayuda="Solo informativo: no suma puntos"
             invalido={marcar && !datos.promotor}
           />
         </div>
