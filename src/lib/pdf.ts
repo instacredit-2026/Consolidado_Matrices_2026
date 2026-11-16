@@ -46,8 +46,8 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   const der = (content: string) => ({ content, styles: { halign: "right" as const } });
   // Con importes APC hay una tabla más: se compacta para que el informe siga cabiendo en una página.
   const compacto = r.importesApc.length > 0;
-  const estiloTabla = { fontSize: compacto ? 9 : 9.5, cellPadding: compacto ? 1 : 1.5 };
-  const separacion = compacto ? 6 : 7;
+  const estiloTabla = { fontSize: compacto ? 9 : 9.5, cellPadding: compacto ? 0.8 : 1.5 };
+  const separacion = compacto ? 5 : 7;
   const finalY = () => (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   // --- Encabezado ---------------------------------------------
@@ -91,66 +91,60 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     y = finalY() + separacion;
   };
 
-  // --- Datos del cliente | Ingresos (dos columnas) -------------
-  const separacionColumnas = 6;
-  const anchoColumna = (ancho - margen * 2 - separacionColumnas) / 2;
-  const xDerecha = margen + anchoColumna + separacionColumnas;
-  const yColumnas = y;
+  const GRIS: [number, number, number] = [247, 248, 250];
 
-  /** Tabla clave-valor en media página. `destacar`: índices de filas en negrita (con fondo si `fondo`). */
-  const tablaColumna = (
-    texto: string,
-    x: number,
-    filas: [string, string][],
-    opciones: { montos?: boolean; destacar?: number[]; fondo?: number[] } = {},
-  ) => {
-    doc.setTextColor(...VERDE_OSCURO);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(t(texto), x, yColumnas);
-    autoTable(doc, {
-      startY: yColumnas + 2,
-      margin: { left: x, right: ancho - x - anchoColumna },
-      tableWidth: anchoColumna,
-      body: filas.map(([k, v]) => [t(k), t(v)]),
-      theme: "grid",
-      styles: estiloTabla,
-      columnStyles: {
-        0: { fontStyle: "bold", cellWidth: anchoColumna * 0.6, fillColor: [247, 248, 250] },
-        1: { halign: opciones.montos ? "right" : "left" },
-      },
-      didParseCell: (d) => {
-        if (d.section !== "body") return;
-        if (opciones.destacar?.includes(d.row.index)) d.cell.styles.fontStyle = "bold";
-        if (opciones.fondo?.includes(d.row.index)) d.cell.styles.fillColor = [230, 242, 224];
-      },
-    });
-    return finalY();
-  };
+  // --- Datos del cliente ----------------------------------------
+  // Dos pares etiqueta-valor por renglón para que ocupe la mitad de alto.
+  titulo("Datos del cliente");
+  const anchoEtiqueta = 44;
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margen, right: margen },
+    body: [
+      ["Nombre", r.solicitud.cliente || "-", "Identificación", r.solicitud.identificacion || "-"],
+      ["Teléfono", r.solicitud.telefono || "-", "Correo", r.solicitud.correo || "-"],
+      [
+        "Saldo actual",
+        formatoMoneda(r.solicitud.saldoActual),
+        "Promotor independiente",
+        r.solicitud.promotorIndependiente === "si" ? "Sí" : "No",
+      ],
+    ].map((fila) => fila.map(t)),
+    theme: "grid",
+    styles: estiloTabla,
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: anchoEtiqueta, fillColor: GRIS },
+      2: { fontStyle: "bold", cellWidth: anchoEtiqueta, fillColor: GRIS },
+    },
+  });
+  y = finalY() + separacion;
 
-  const finCliente = tablaColumna("Datos del cliente", margen, [
-    ["Nombre", r.solicitud.cliente || "-"],
-    ["Identificación", r.solicitud.identificacion || "-"],
-    ["Teléfono", r.solicitud.telefono || "-"],
-    ["Correo", r.solicitud.correo || "-"],
-    ["Saldo actual", formatoMoneda(r.solicitud.saldoActual)],
-    ["Promotor independiente", r.solicitud.promotorIndependiente === "si" ? "Sí" : "No"],
-  ]);
-
+  // --- Ingresos (mensual) ---------------------------------------
   // Ingreso bruto, un renglón por cada descuento de ley, el total de descuentos y el neto.
+  titulo("Ingresos (mensual)");
   const n = r.ingreso.descuentos.length;
-  const finIngresos = tablaColumna(
-    "Ingresos (mensual)",
-    xDerecha,
-    [
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margen, right: margen },
+    body: [
       ["Ingreso bruto", formatoMoneda(r.ingreso.bruto)],
-      ...r.ingreso.descuentos.map((d): [string, string] => [`(-) ${d.concepto}`, formatoMoneda(d.monto)]),
+      ...r.ingreso.descuentos.map((d) => [`(-) ${d.concepto}`, formatoMoneda(d.monto)]),
       ["Total descuentos de ley", formatoMoneda(r.ingreso.totalDescuentos)],
       ["Ingreso neto", formatoMoneda(r.ingreso.neto)],
-    ],
-    { montos: true, destacar: [n + 1, n + 2], fondo: [n + 2] },
-  );
-  y = Math.max(finCliente, finIngresos) + separacion;
+    ].map((fila) => fila.map(t)),
+    theme: "grid",
+    styles: estiloTabla,
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: 65, fillColor: GRIS },
+      1: { halign: "right" },
+    },
+    didParseCell: (d) => {
+      if (d.section !== "body") return;
+      if (d.row.index >= n + 1) d.cell.styles.fontStyle = "bold"; // total y neto
+      if (d.row.index === n + 2) d.cell.styles.fillColor = [230, 242, 224]; // neto
+    },
+  });
+  y = finalY() + separacion;
 
   // --- Criterios evaluados ------------------------------------
   titulo("Criterios evaluados");
