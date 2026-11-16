@@ -2,12 +2,14 @@ import type { Resultado } from "./calculos";
 import { formatoMoneda, formatoPorcentaje } from "./calculos";
 
 const COLOR_DECISION: Record<Resultado["decision"], [number, number, number]> = {
-  Aprobado: [22, 128, 61],
-  "En revisión": [180, 110, 0],
-  Rechazado: [185, 28, 28],
+  Aprobado: [76, 156, 46],
+  "En revisión": [183, 121, 31],
+  Rechazado: [197, 48, 48],
 };
 
-const AZUL: [number, number, number] = [30, 58, 95];
+// Colores del sistema de diseño Instacredit (src/styles/tokens.css).
+const VERDE: [number, number, number] = [76, 156, 46]; // --ic-primary
+const VERDE_OSCURO: [number, number, number] = [51, 107, 31]; // --ic-primary-active
 
 /** Las fuentes estándar del PDF solo cubren Latin-1: limpiamos caracteres fuera de rango. */
 function t(s: string): string {
@@ -45,7 +47,7 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   const finalY = () => (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   // --- Encabezado ---------------------------------------------
-  doc.setFillColor(...AZUL);
+  doc.setFillColor(...VERDE);
   doc.rect(0, 0, ancho, 24, "F");
   let xTitulo = margen;
   if (logo) {
@@ -66,7 +68,7 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   y = 32;
 
   const titulo = (texto: string) => {
-    doc.setTextColor(...AZUL);
+    doc.setTextColor(...VERDE_OSCURO);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text(t(texto), margen, y);
@@ -80,7 +82,7 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
       body: filas.map(([k, v]) => [t(k), t(v)]),
       theme: "grid",
       styles: { fontSize: 9.5, cellPadding: 1.5 },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 65, fillColor: [241, 245, 249] } },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 65, fillColor: [247, 248, 250] } },
     });
     y = finalY() + 7;
   };
@@ -90,8 +92,12 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   tablaClaveValor([
     ["Nombre", r.solicitud.cliente || "-"],
     ["Identificación", r.solicitud.identificacion || "-"],
-    ["Monto solicitado", formatoMoneda(r.solicitud.montoSolicitado)],
-    ["Salario mensual", formatoMoneda(r.solicitud.salario)],
+    ["Teléfono", r.solicitud.telefono || "-"],
+    ["Correo", r.solicitud.correo || "-"],
+    ["Ingreso bruto", formatoMoneda(r.solicitud.ingresoBruto)],
+    ["Ingreso neto", formatoMoneda(r.solicitud.ingresoNeto)],
+    ["Saldo actual", formatoMoneda(r.solicitud.saldoActual)],
+    ["Promotor independiente", r.solicitud.promotorIndependiente === "si" ? "Sí" : "No"],
   ]);
 
   // --- Criterios evaluados ------------------------------------
@@ -104,8 +110,8 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     foot: [["Total", "", der(String(r.puntaje)), der(String(r.puntajeMaximo))]],
     theme: "grid",
     styles: { fontSize: 9.5, cellPadding: 1.5 },
-    headStyles: { fillColor: AZUL },
-    footStyles: { fillColor: [226, 232, 240], textColor: 20 },
+    headStyles: { fillColor: VERDE },
+    footStyles: { fillColor: [230, 242, 224], textColor: 20 },
     columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
   });
   y = finalY() + 7;
@@ -118,7 +124,7 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     ["Plazo", `${r.producto.plazoMeses} meses`],
     ["Cuota mensual estimada", formatoMoneda(r.cuotaMensual)],
     ["Total a pagar", formatoMoneda(r.totalAPagar)],
-    ["Relación cuota / salario", formatoPorcentaje(r.relacionCuotaIngreso)],
+    ["Relación cuota / ingreso neto", formatoPorcentaje(r.relacionCuotaIngreso)],
     ["Monto máximo sugerido", formatoMoneda(r.montoMaximoSugerido)],
     ["Monto máximo del producto", formatoMoneda(r.producto.montoMaximo)],
   ]);

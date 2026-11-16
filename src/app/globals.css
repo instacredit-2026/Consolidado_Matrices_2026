@@ -1,5 +1,3 @@
+/* Tailwind convive con el sistema de diseño Instacredit (src/styles/).
+   Sus estilos van en capas (@layer), así que las clases ic-* siempre ganan. */
 @import "tailwindcss";
-
-body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}

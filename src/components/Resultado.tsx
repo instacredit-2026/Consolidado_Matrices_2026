@@ -1,28 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UMBRALES } from "@/config/matriz";
 import { formatoMoneda, formatoPorcentaje, type Resultado as R } from "@/lib/calculos";
 import { cargarLogo } from "@/lib/logo";
 import { generarPDF } from "@/lib/pdf";
 
-const ESTILO_DECISION: Record<R["decision"], string> = {
-  Aprobado: "bg-green-700",
-  "En revisión": "bg-amber-600",
-  Rechazado: "bg-red-700",
+type Tono = "success" | "warning" | "danger";
+
+const TONO_DECISION: Record<R["decision"], Tono> = {
+  Aprobado: "success",
+  "En revisión": "warning",
+  Rechazado: "danger",
 };
 
-const COLOR_BARRA: Record<R["nivelRiesgo"], string> = {
-  Bajo: "bg-green-600",
-  Medio: "bg-amber-500",
-  Alto: "bg-red-600",
+const TONO_RIESGO: Record<R["nivelRiesgo"], Tono> = {
+  Bajo: "success",
+  Medio: "warning",
+  Alto: "danger",
+};
+
+const ICONO_DECISION: Record<R["decision"], string> = {
+  Aprobado: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+  "En revisión":
+    "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
+  Rechazado:
+    "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
 };
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 p-3">
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{etiqueta}</dt>
-      <dd className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{valor}</dd>
+    <div className="ic-stat">
+      <dt className="ic-stat__label">{etiqueta}</dt>
+      <dd className="ic-stat__value">{valor}</dd>
     </div>
   );
 }
@@ -30,6 +40,15 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 export default function Resultado({ r }: { r: R }) {
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState("");
+  const [lleno, setLleno] = useState(false);
+
+  // Dos frames: el primero pinta la barra vacía, el segundo dispara el llenado.
+  useEffect(() => {
+    let id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(() => setLleno(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const descargar = async () => {
     setGenerando(true);
@@ -44,80 +63,119 @@ export default function Resultado({ r }: { r: R }) {
     }
   };
 
-  const porcentaje = Math.round((r.puntaje / r.puntajeMaximo) * 100);
+  const pos = (puntos: number) => `${(puntos / r.puntajeMaximo) * 100}%`;
+  const tono = TONO_DECISION[r.decision];
 
   return (
-    <section aria-live="polite" className="space-y-5">
-      <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-5 py-4 text-white ${ESTILO_DECISION[r.decision]}`}>
-        <p className="text-xl font-bold">{r.decision}</p>
-        <p className="text-sm font-medium opacity-90">Riesgo {r.nivelRiesgo}</p>
+    <div aria-live="polite" className="ic-stack ic-result">
+      <div className={`ic-decision ic-decision--${tono}`}>
+        <span className="ic-decision__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d={ICONO_DECISION[r.decision]} />
+          </svg>
+        </span>
+        <div>
+          <p className="ic-decision__label">{r.decision}</p>
+          <p className="ic-decision__risk">
+            Riesgo {r.nivelRiesgo.toLowerCase()} · {r.puntaje} de {r.puntajeMaximo} puntos
+          </p>
+        </div>
       </div>
 
       <div>
-        <div className="mb-1 flex justify-between text-sm">
-          <span className="font-medium text-slate-700">Puntaje</span>
-          <span className="tabular-nums text-slate-900">{r.puntaje} / {r.puntajeMaximo}</span>
+        <div className="ic-meter__head">
+          <span>Puntaje</span>
+          <strong>{r.puntaje} / {r.puntajeMaximo}</strong>
         </div>
-        <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
-          <div className={`h-full ${COLOR_BARRA[r.nivelRiesgo]}`} style={{ width: `${porcentaje}%` }} />
-          <div className="absolute inset-y-0 w-px bg-slate-500" style={{ left: `${UMBRALES.riesgoMedio}%` }} title="Mínimo riesgo medio" />
-          <div className="absolute inset-y-0 w-px bg-slate-500" style={{ left: `${UMBRALES.riesgoBajo}%` }} title="Mínimo riesgo bajo" />
+        <div
+          className="ic-meter__track"
+          role="meter"
+          aria-label="Puntaje"
+          aria-valuemin={0}
+          aria-valuemax={r.puntajeMaximo}
+          aria-valuenow={r.puntaje}
+        >
+          <div
+            className={`ic-meter__bar ic-meter__bar--${TONO_RIESGO[r.nivelRiesgo]} ic-meter__bar--fill`}
+            style={{ width: lleno ? pos(r.puntaje) : "0%" }}
+          />
+          <div className="ic-meter__mark" style={{ left: pos(UMBRALES.riesgoMedio) }} title="Mínimo riesgo medio" />
+          <div className="ic-meter__mark" style={{ left: pos(UMBRALES.riesgoBajo) }} title="Mínimo riesgo bajo" />
+        </div>
+        <div className="ic-meter__scale" aria-hidden="true">
+          <span style={{ left: pos(UMBRALES.riesgoMedio) }}>{UMBRALES.riesgoMedio}</span>
+          <span style={{ left: pos(UMBRALES.riesgoBajo) }}>{UMBRALES.riesgoBajo}</span>
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3">
-        <Dato etiqueta="Cuota mensual" valor={formatoMoneda(r.cuotaMensual)} />
-        <Dato etiqueta="Cuota / salario" valor={formatoPorcentaje(r.relacionCuotaIngreso)} />
+      <div className="ic-hero-stat">
+        <p className="ic-hero-stat__label">Cuota mensual</p>
+        <p className="ic-hero-stat__value">{formatoMoneda(r.cuotaMensual)}</p>
+        <p className="ic-note">
+          {r.producto.etiqueta} · tasa {formatoPorcentaje(r.producto.tasaAnual, 2)} anual · {r.producto.plazoMeses} meses
+        </p>
+      </div>
+
+      <dl className="ic-stats">
+        <Dato etiqueta="Cuota / ingreso neto" valor={formatoPorcentaje(r.relacionCuotaIngreso)} />
         <Dato etiqueta="Monto máx. sugerido" valor={formatoMoneda(r.montoMaximoSugerido)} />
         <Dato etiqueta="Total a pagar" valor={formatoMoneda(r.totalAPagar)} />
       </dl>
-      <p className="text-xs text-slate-500">
-        {r.producto.etiqueta}: tasa {formatoPorcentaje(r.producto.tasaAnual, 2)} anual, {r.producto.plazoMeses} meses.
-      </p>
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-slate-500">
-            <th className="py-1.5 font-medium">Criterio</th>
-            <th className="py-1.5 font-medium">Selección</th>
-            <th className="py-1.5 text-right font-medium">Puntos</th>
-          </tr>
-        </thead>
-        <tbody>
-          {r.detalle.map((d) => (
-            <tr key={d.titulo} className="border-b border-slate-100">
-              <td className="py-1.5 text-slate-700">{d.titulo}</td>
-              <td className="py-1.5 text-slate-900">{d.opcion}</td>
-              <td className="py-1.5 text-right tabular-nums text-slate-900">{d.puntos}/{d.maximo}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="space-y-2 text-sm">
-        <p className="font-semibold text-slate-900">Motivos</p>
-        <ul className="list-inside list-disc space-y-1 text-slate-700">
+      <div className={`ic-alert ic-alert--${tono}`}>
+        <p className="ic-alert__title">Motivos</p>
+        <ul className="ic-list">
           {r.motivos.map((m) => <li key={m}>{m}</li>)}
         </ul>
-        {r.advertencias.length > 0 && (
-          <>
-            <p className="pt-2 font-semibold text-slate-900">Observaciones</p>
-            <ul className="list-inside list-disc space-y-1 text-amber-800">
-              {r.advertencias.map((m) => <li key={m}>{m}</li>)}
-            </ul>
-          </>
-        )}
+      </div>
+
+      {r.advertencias.length > 0 && (
+        <div className="ic-alert ic-alert--warning">
+          <p className="ic-alert__title">Observaciones</p>
+          <ul className="ic-list">
+            {r.advertencias.map((m) => <li key={m}>{m}</li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="ic-table-wrap ic-table-wrap--flat">
+        <table className="ic-table ic-table--compact">
+          <thead>
+            <tr>
+              <th>Criterio</th>
+              <th>Selección</th>
+              <th className="ic-table__num">Puntos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {r.detalle.map((d) => (
+              <tr key={d.titulo}>
+                <td>{d.titulo}</td>
+                <td>{d.opcion}</td>
+                <td className="ic-table__num">{d.puntos}/{d.maximo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <button
         type="button"
         onClick={descargar}
         disabled={generando}
-        className="w-full rounded-lg bg-slate-900 px-5 py-3 font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60"
+        aria-busy={generando}
+        className="ic-btn ic-btn--primary ic-btn--block ic-btn--lg"
       >
-        {generando ? "Generando…" : "Generar informe PDF"}
+        {generando ? (
+          <span className="ic-spinner" aria-hidden="true" />
+        ) : (
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+          </svg>
+        )}
+        {generando ? "Generando…" : "Generar Informe PDF"}
       </button>
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-    </section>
+      {error && <div role="alert" className="ic-alert ic-alert--danger ic-appear">{error}</div>}
+    </div>
   );
 }

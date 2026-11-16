@@ -1,0 +1,93 @@
+/* ==========================================================================
+   TOKENS — Sistema de diseño Instacredit
+   Cambia estos valores para ajustar toda la interfaz.
+   ========================================================================== */
+:root {
+  /* ---- Color: marca ---- */
+  --ic-primary:          #4C9C2E;
+  --ic-primary-hover:    #3E8226;
+  --ic-primary-active:   #336B1F;
+  --ic-primary-disabled: #A5CD97;
+  --ic-primary-soft:     #E6F2E0;
+  --ic-on-primary:       #FFFFFF;
+
+  /* ---- Color: superficies ---- */
+  --ic-bg:               #F4F5F7;  /* fondo del contenido */
+  --ic-surface:          #FFFFFF;  /* sidebar, tarjetas */
+  --ic-surface-alt:      #F7F8FA;  /* dropzone, filas zebra */
+  --ic-input-bg:         #E3E6EF;  /* input filled */
+  --ic-nav-active:       #C5CCE0;  /* item activo del menú */
+  --ic-nav-hover:        #EEF0F6;
+
+  /* ---- Color: texto ---- */
+  --ic-text-strong:      #2B2B2B;
+  --ic-text:             #444444;
+  --ic-text-muted:       #666666;
+  --ic-text-disabled:    #9A9A9A;
+
+  /* ---- Color: bordes ---- */
+  --ic-border:           #D5D8DE;
+  --ic-border-strong:    #555555;
+
+  /* ---- Color: estados ---- */
+  --ic-success:          #4C9C2E;
+  --ic-success-bg:       #E6F2E0;
+  --ic-warning:          #B7791F;
+  --ic-warning-bg:       #FDF3E1;
+  --ic-danger:           #C53030;
+  --ic-danger-bg:        #FCE8E8;
+  --ic-info:             #2B6CB0;
+  --ic-info-bg:          #E5EFFA;
+
+  /* ---- Tipografía ---- */
+  --ic-font:             "Roboto", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ic-fs-xs:   0.75rem;   /* 12px */
+  --ic-fs-sm:   0.875rem;  /* 14px */
+  --ic-fs-md:   1rem;      /* 16px */
+  --ic-fs-lg:   1.25rem;   /* 20px */
+  --ic-fs-xl:   1.5rem;    /* 24px */
+  --ic-fs-2xl:  2rem;      /* 32px — títulos de sección */
+  --ic-fw-regular: 400;
+  --ic-fw-medium:  500;
+  --ic-fw-bold:    700;
+  --ic-lh:         1.5;
+
+  /* ---- Espaciado (base 4px) ---- */
+  --ic-space-1:  4px;
+  --ic-space-2:  8px;
+  --ic-space-3:  12px;
+  --ic-space-4:  16px;
+  --ic-space-5:  20px;
+  --ic-space-6:  24px;
+  --ic-space-8:  32px;
+  --ic-space-10: 40px;
+  --ic-space-12: 48px;
+  --ic-space-16: 64px;
+
+  /* ---- Radios ---- */
+  --ic-radius-sm: 4px;
+  --ic-radius:    6px;   /* botones, inputs */
+  --ic-radius-lg: 8px;   /* tarjetas, dropzone */
+  --ic-radius-xl: 16px;
+
+  /* ---- Sombras ---- */
+  --ic-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);
+  --ic-shadow:    0 2px 6px rgba(0, 0, 0, .10);
+  --ic-shadow-lg: 0 8px 24px rgba(0, 0, 0, .12);
+  --ic-focus-ring: 0 0 0 3px rgba(76, 156, 46, .35);
+
+  /* ---- Layout ---- */
+  --ic-header-h:   64px;
+  --ic-sidebar-w:  280px;
+  --ic-content-max: 1200px;
+
+  /* ---- Movimiento ---- */
+  --ic-transition: 180ms ease;
+
+  /* ---- Capas ---- */
+  --ic-z-deco:     0;
+  --ic-z-content:  1;
+  --ic-z-sidebar:  900;
+  --ic-z-overlay:  950;
+  --ic-z-header:   1000;
+}

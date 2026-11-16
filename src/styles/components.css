@@ -1,0 +1,292 @@
+/* ==========================================================================
+   COMPONENTES
+   ========================================================================== */
+
+/* ---------- Botones ----------
+   <button class="ic-btn ic-btn--primary">Texto</button>
+   Variantes: --primary | --secondary | --ghost | --danger
+   Tamaños:   --sm | --lg   Bloque: --block
+   Deshabilitado: atributo [disabled] o clase --disabled
+*/
+.ic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ic-space-2);
+  min-height: 48px;
+  padding: 0 var(--ic-space-5);
+  border: 2px solid transparent;
+  border-radius: var(--ic-radius);
+  font-size: 0.95rem;
+  font-weight: var(--ic-fw-bold);
+  letter-spacing: -0.2px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ic-transition), border-color var(--ic-transition),
+              color var(--ic-transition), box-shadow var(--ic-transition);
+}
+.ic-btn:hover { text-decoration: none; }
+.ic-btn:has(input:focus-visible) { box-shadow: var(--ic-focus-ring); } /* botón <label> con input file */
+.ic-btn svg { width: 18px; height: 18px; }
+
+.ic-btn--primary { background: var(--ic-primary); color: var(--ic-on-primary); box-shadow: var(--ic-shadow-sm); }
+.ic-btn--primary:hover  { background: var(--ic-primary-hover); }
+.ic-btn--primary:active { background: var(--ic-primary-active); }
+
+.ic-btn--secondary { background: var(--ic-surface); color: var(--ic-primary); border-color: var(--ic-primary); }
+.ic-btn--secondary:hover { background: var(--ic-primary-soft); }
+
+.ic-btn--ghost { background: transparent; color: var(--ic-primary); }
+.ic-btn--ghost:hover { background: var(--ic-primary-soft); }
+
+.ic-btn--danger { background: var(--ic-danger); color: #fff; }
+.ic-btn--danger:hover { background: #A52828; }
+
+.ic-btn--sm { min-height: 36px; padding: 0 var(--ic-space-3); font-size: var(--ic-fs-sm); }
+.ic-btn--lg { min-height: 56px; padding: 0 var(--ic-space-8); font-size: var(--ic-fs-md); }
+.ic-btn--block { display: flex; width: 100%; }
+.ic-btn--wide  { min-width: 185px; }
+
+.ic-btn:disabled,
+.ic-btn--disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+.ic-btn--primary:disabled,
+.ic-btn--primary.ic-btn--disabled { background: var(--ic-primary-disabled); color: #F3F8F0; }
+.ic-btn--secondary:disabled,
+.ic-btn--secondary.ic-btn--disabled { color: var(--ic-primary-disabled); border-color: var(--ic-primary-disabled); }
+
+/* ---------- Título de sección ----------
+   <h1 class="ic-section-title">Subir Archivo</h1>
+*/
+.ic-section-title {
+  position: relative;
+  margin: 0 0 var(--ic-space-10);
+  padding-bottom: var(--ic-space-4);
+  font-size: var(--ic-fs-2xl);
+  font-weight: var(--ic-fw-bold);
+  color: var(--ic-text-strong);
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+.ic-section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 110px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--ic-primary) 30%, var(--ic-primary) 70%, transparent);
+}
+.ic-section-title--left { text-align: left; }
+.ic-section-title--left::after { left: 0; transform: none; }
+
+/* ---------- Dropzone ----------
+   <label class="ic-dropzone"> … <input type="file" hidden> </label>
+   Estados: --dragover | --has-file
+*/
+.ic-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ic-space-4);
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--ic-space-6) var(--ic-space-6) var(--ic-space-12);
+  background: var(--ic-surface-alt);
+  border: 2px dashed var(--ic-border);
+  border-radius: var(--ic-radius-lg);
+  text-align: center;
+  transition: border-color var(--ic-transition), background var(--ic-transition);
+}
+.ic-dropzone__icon { width: 56px; height: 56px; color: #6B7280; }
+.ic-dropzone__text { margin: 0; font-size: 1.1rem; color: var(--ic-text); }
+.ic-dropzone__or   { margin: 0; font-size: var(--ic-fs-sm); color: var(--ic-text-muted); }
+.ic-dropzone__file {
+  margin: 0;
+  font-size: var(--ic-fs-sm);
+  font-weight: var(--ic-fw-medium);
+  color: var(--ic-primary);
+  word-break: break-all;
+}
+.ic-dropzone__file:empty { display: none; }
+.ic-dropzone__actions { display: flex; flex-direction: column; gap: var(--ic-space-5); }
+.ic-dropzone__actions .ic-btn { min-width: 185px; }
+
+.ic-dropzone--dragover {
+  border-color: var(--ic-primary);
+  background: var(--ic-primary-soft);
+}
+.ic-dropzone--dragover .ic-dropzone__icon { color: var(--ic-primary); }
+.ic-dropzone--has-file { border-style: solid; border-color: var(--ic-primary-disabled); }
+
+/* ---------- Inputs (estilo "filled") ----------
+   <div class="ic-field">
+     <input class="ic-input" id="x" placeholder=" ">
+     <label class="ic-field__label" for="x">Filter</label>
+   </div>
+*/
+.ic-field {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 240px;
+}
+.ic-field--full { max-width: none; }
+.ic-input,
+.ic-select,
+.ic-textarea {
+  display: block;
+  width: 100%;
+  height: 62px;
+  padding: 24px var(--ic-space-4) 8px;
+  background: var(--ic-input-bg);
+  border: 0;
+  border-bottom: 1px solid var(--ic-border-strong);
+  border-radius: var(--ic-radius-sm) var(--ic-radius-sm) 0 0;
+  font-size: var(--ic-fs-md);
+  color: var(--ic-text-strong);
+  transition: border-color var(--ic-transition), background var(--ic-transition);
+}
+.ic-textarea { height: auto; min-height: 120px; resize: vertical; }
+.ic-input:hover, .ic-select:hover, .ic-textarea:hover { background: #DADEE9; }
+.ic-input:focus, .ic-select:focus, .ic-textarea:focus {
+  outline: none;
+  box-shadow: none;
+  border-bottom: 2px solid var(--ic-primary);
+}
+.ic-field__label {
+  position: absolute;
+  left: var(--ic-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  color: var(--ic-text-muted);
+  pointer-events: none;
+  transition: all var(--ic-transition);
+}
+.ic-textarea + .ic-field__label { top: 28px; }
+.ic-input:focus + .ic-field__label,
+.ic-input:not(:placeholder-shown) + .ic-field__label,
+.ic-select + .ic-field__label,
+.ic-textarea:focus + .ic-field__label,
+.ic-textarea:not(:placeholder-shown) + .ic-field__label {
+  top: 14px;
+  font-size: var(--ic-fs-xs);
+  color: var(--ic-primary);
+}
+.ic-field__hint { display: block; margin-top: var(--ic-space-1); font-size: var(--ic-fs-xs); color: var(--ic-text-muted); }
+.ic-field--error .ic-input { border-bottom-color: var(--ic-danger); }
+.ic-field.ic-field--error .ic-field__label,
+.ic-field--error .ic-field__hint { color: var(--ic-danger); }
+
+/* ---------- Tarjeta ---------- */
+.ic-card {
+  background: var(--ic-surface);
+  border-radius: var(--ic-radius-lg);
+  box-shadow: var(--ic-shadow-sm);
+  padding: var(--ic-space-6);
+}
+.ic-card__title { margin-bottom: var(--ic-space-2); font-size: var(--ic-fs-lg); }
+
+/* ---------- Tabla ---------- */
+.ic-table-wrap {
+  overflow-x: auto;
+  background: var(--ic-surface);
+  border-radius: var(--ic-radius-lg);
+  box-shadow: var(--ic-shadow-sm);
+}
+.ic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ic-fs-sm);
+}
+.ic-table th,
+.ic-table td {
+  padding: var(--ic-space-4);
+  text-align: left;
+  border-bottom: 1px solid #ECEEF2;
+  white-space: nowrap;
+}
+.ic-table th {
+  font-weight: var(--ic-fw-bold);
+  color: var(--ic-text-strong);
+  background: var(--ic-surface-alt);
+}
+.ic-table tbody tr:hover { background: #F2F7EF; }
+.ic-table tbody tr:last-child td { border-bottom: 0; }
+.ic-table__empty td {
+  padding: var(--ic-space-10);
+  text-align: center;
+  color: var(--ic-text-muted);
+}
+
+/* ---------- Badges ---------- */
+.ic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ic-space-1);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: var(--ic-fs-xs);
+  font-weight: var(--ic-fw-bold);
+}
+.ic-badge--success { color: var(--ic-success); background: var(--ic-success-bg); }
+.ic-badge--warning { color: var(--ic-warning); background: var(--ic-warning-bg); }
+.ic-badge--danger  { color: var(--ic-danger);  background: var(--ic-danger-bg); }
+.ic-badge--info    { color: var(--ic-info);    background: var(--ic-info-bg); }
+
+/* ---------- Alertas ---------- */
+.ic-alert {
+  padding: var(--ic-space-3) var(--ic-space-4);
+  border-left: 4px solid currentColor;
+  border-radius: var(--ic-radius-sm);
+  font-size: var(--ic-fs-sm);
+}
+.ic-alert--success { color: var(--ic-success); background: var(--ic-success-bg); }
+.ic-alert--warning { color: var(--ic-warning); background: var(--ic-warning-bg); }
+.ic-alert--danger  { color: var(--ic-danger);  background: var(--ic-danger-bg); }
+.ic-alert--info    { color: var(--ic-info);    background: var(--ic-info-bg); }
+
+/* ---------- Decoraciones de fondo ----------
+   <div class="ic-deco" aria-hidden="true">
+     <span class="ic-deco__blob ic-deco__blob--1"></span> …
+   </div>
+*/
+.ic-deco {
+  position: absolute;
+  inset: 0;
+  z-index: var(--ic-z-deco);
+  overflow: hidden;
+  pointer-events: none;
+}
+.ic-deco__blob {
+  position: absolute;
+  background: rgba(0, 0, 0, .035);
+  border-radius: 42% 58% 55% 45% / 45% 40% 60% 55%;
+}
+.ic-deco__blob--1 { width: 180px; height: 150px; top: -40px; left: 46%; }
+.ic-deco__blob--2 { width: 170px; height: 175px; top: 10px; right: 3%; border-radius: 30% 35% 40% 45% / 35% 30% 45% 40%; }
+.ic-deco__blob--3 { width: 220px; height: 200px; bottom: 25%; left: -60px; }
+.ic-deco__diamond {
+  position: absolute;
+  width: 16px; height: 16px;
+  background: rgba(0, 0, 0, .06);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.ic-deco__diamond--1 { top: 560px; left: 20%; }
+.ic-deco__diamond--2 { top: 300px; right: 12%; width: 10px; height: 10px; }
+
+@media (max-width: 599.98px) {
+  .ic-field { max-width: none; }
+  .ic-dropzone__actions, .ic-dropzone__actions .ic-btn { width: 100%; }
+}

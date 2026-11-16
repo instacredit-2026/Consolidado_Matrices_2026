@@ -4,3 +4,12 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+.env*.local
+
+# Documentos internos (no publicar)
+*.xlsx
+*.xlsm
+*.xls
+
+# Archivos temporales del CLI de Supabase
+supabase/.temp/
