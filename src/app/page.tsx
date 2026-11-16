@@ -9,7 +9,8 @@ import Resultado from "@/components/Resultado";
 import SelectorTipoCotizacion from "@/components/SelectorTipoCotizacion";
 import { CRITERIOS, type CodigoTipoCotizacion, type Producto, type TipoCotizacion } from "@/config/matriz";
 import { cargarProductos, cargarTiposCotizacion } from "@/lib/catalogo";
-import { calcular, SELECCION_VACIA, validar, type Resultado as R, type Solicitud } from "@/lib/calculos";
+import { SELECCION_VACIA, type Resultado as R, type Solicitud } from "@/lib/calculos";
+import { calcular, validar } from "@/lib/cotizaciones";
 
 const INICIAL: DatosFormulario = {
   cliente: "",
@@ -30,7 +31,8 @@ const INICIAL: DatosFormulario = {
 /** Por debajo de este ancho el resultado queda debajo del formulario. */
 const APILADO = "(max-width: 1199.98px)";
 
-const aSolicitud = (d: DatosFormulario, productos: Producto[]): Solicitud => ({
+const aSolicitud = (d: DatosFormulario, productos: Producto[], tipo: CodigoTipoCotizacion | null): Solicitud => ({
+  tipoCotizacion: tipo ?? "",
   cliente: d.cliente.trim(),
   identificacion: d.identificacion.trim(),
   telefono: d.telefono.trim(),
@@ -118,7 +120,7 @@ function Evaluacion() {
   const listaProductos = productos.estado === "listo" ? productos.productos : [];
 
   // Tras el primer intento, la validación se recalcula en cada cambio (en línea).
-  const errores = intentado ? validar(aSolicitud(datos, listaProductos)) : [];
+  const errores = intentado ? validar(aSolicitud(datos, listaProductos, tipo)) : [];
 
   // + plazo, producto, promotor, ingreso bruto, ingreso neto y monto cliente (el saldo actual es opcional)
   const totalCampos = CRITERIOS.length + 6;
@@ -133,7 +135,7 @@ function Evaluacion() {
   };
 
   const onCalcular = () => {
-    const solicitud = aSolicitud(datos, listaProductos);
+    const solicitud = aSolicitud(datos, listaProductos, tipo);
     const errs = validar(solicitud);
     setIntentado(true);
     if (errs.length) {

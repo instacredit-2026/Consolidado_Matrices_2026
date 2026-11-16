@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UMBRALES } from "@/config/matriz";
 import { formatoMoneda, formatoPorcentaje, type Resultado as R } from "@/lib/calculos";
 import { cargarLogo } from "@/lib/logo";
 import { generarPDF } from "@/lib/pdf";
@@ -99,12 +98,12 @@ export default function Resultado({ r }: { r: R }) {
             className={`ic-meter__bar ic-meter__bar--${TONO_RIESGO[r.nivelRiesgo]} ic-meter__bar--fill`}
             style={{ width: lleno ? pos(r.puntaje) : "0%" }}
           />
-          <div className="ic-meter__mark" style={{ left: pos(UMBRALES.riesgoMedio) }} title="Mínimo riesgo medio" />
-          <div className="ic-meter__mark" style={{ left: pos(UMBRALES.riesgoBajo) }} title="Mínimo riesgo bajo" />
+          <div className="ic-meter__mark" style={{ left: pos(r.parametros.riesgoMedio) }} title="Mínimo riesgo medio" />
+          <div className="ic-meter__mark" style={{ left: pos(r.parametros.riesgoBajo) }} title="Mínimo riesgo bajo" />
         </div>
         <div className="ic-meter__scale" aria-hidden="true">
-          <span style={{ left: pos(UMBRALES.riesgoMedio) }}>{UMBRALES.riesgoMedio}</span>
-          <span style={{ left: pos(UMBRALES.riesgoBajo) }}>{UMBRALES.riesgoBajo}</span>
+          <span style={{ left: pos(r.parametros.riesgoMedio) }}>{r.parametros.riesgoMedio}</span>
+          <span style={{ left: pos(r.parametros.riesgoBajo) }}>{r.parametros.riesgoBajo}</span>
         </div>
       </div>
 
