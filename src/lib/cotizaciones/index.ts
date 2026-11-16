@@ -10,6 +10,7 @@ import { PV } from "./pv";
 import { PYME } from "./pyme";
 
 export type { ParametrosCotizacion, ReglasCotizacion } from "./base";
+export type { CalculoIngresoNeto, DesgloseIngreso } from "./ingresoNeto";
 
 const REGLAS: Record<string, ReglasCotizacion> = { PV, DD, EP, PYME };
 

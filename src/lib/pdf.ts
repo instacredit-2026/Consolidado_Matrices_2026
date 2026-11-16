@@ -99,7 +99,13 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     ["Teléfono", r.solicitud.telefono || "-"],
     ["Correo", r.solicitud.correo || "-"],
     ["Ingreso bruto", formatoMoneda(r.solicitud.ingresoBruto)],
-    ["Ingreso neto", formatoMoneda(r.solicitud.ingresoNeto)],
+    [
+      "Descuentos de ley",
+      `${formatoMoneda(r.ingreso.totalDescuentos)} (${r.ingreso.descuentos
+        .map((d) => `${d.concepto.replace(/ \(.*\)$/, "")} ${formatoMoneda(d.monto)}`)
+        .join(", ")})`,
+    ],
+    ["Ingreso neto (calculado)", formatoMoneda(r.ingreso.neto)],
     ["Saldo actual", formatoMoneda(r.solicitud.saldoActual)],
     ["Promotor independiente", r.solicitud.promotorIndependiente === "si" ? "Sí" : "No"],
   ]);

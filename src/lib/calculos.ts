@@ -14,6 +14,7 @@ import {
   type PromotorIndependiente,
 } from "@/config/matriz";
 import type { ParametrosCotizacion } from "@/lib/cotizaciones/base";
+import type { DesgloseIngreso } from "@/lib/cotizaciones/ingresoNeto";
 
 /** Fila de Importes APC. `detalle` es null si no se eligió. */
 export type ImporteApc = { detalle: DetalleApc | null; monto: number };
@@ -42,9 +43,8 @@ export type Solicitud = {
   /** Producto elegido (de los cargados para el tipo de cotización), o null si falta. */
   producto: Producto | null;
   promotorIndependiente: PromotorIndependiente | null;
+  /** Ingreso bruto mensual; el neto se calcula según el tipo de cotización. */
   ingresoBruto: number;
-  /** Se usa para la relación cuota / ingreso. */
-  ingresoNeto: number;
   /** Saldo que el cliente ya tiene en el sistema; se cancela con el préstamo nuevo. Puede ser 0. */
   saldoActual: number;
   /** Monto total del préstamo nuevo; es el monto que se financia. */
@@ -68,6 +68,8 @@ export type Resultado = {
   solicitud: Solicitud;
   /** Parámetros del tipo de cotización con que se evaluó. */
   parametros: ParametrosCotizacion;
+  /** Ingreso bruto, descuentos y neto calculado; el neto se usa para la relación cuota / ingreso. */
+  ingreso: DesgloseIngreso;
   producto: Producto & { plazoMeses: number };
   detalle: DetalleCriterio[];
   puntaje: number;

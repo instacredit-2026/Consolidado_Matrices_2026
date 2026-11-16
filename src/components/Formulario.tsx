@@ -12,6 +12,7 @@ import {
   type PromotorIndependiente,
 } from "@/config/matriz";
 import { correoValido, formatoMoneda, importeFinalApc } from "@/lib/calculos";
+import type { CalculoIngresoNeto } from "@/lib/cotizaciones";
 
 /** Fila de Importes APC tal como se edita en el formulario. `id` solo sirve de key de React. */
 export type FilaApc = { id: number; detalle: DetalleApc | ""; monto: string };
@@ -30,8 +31,8 @@ export type DatosFormulario = {
   /** id del producto elegido (producto_credito.id). */
   producto: string;
   promotor: PromotorIndependiente | "";
+  /** Ingreso bruto mensual; el neto no se ingresa, se calcula. */
   ingresoBruto: string;
-  ingresoNeto: string;
   /** Saldo que el cliente ya tiene en el sistema (opcional, 0 si no tiene). */
   saldoActual: string;
   /** Monto total del préstamo nuevo. */
@@ -49,6 +50,8 @@ export type EstadoProductos =
 type Props = {
   datos: DatosFormulario;
   productos: EstadoProductos;
+  /** Cálculo del ingreso neto del tipo de cotización elegido. */
+  calcularNeto: CalculoIngresoNeto;
   onReintentarProductos: () => void;
   onChange: (datos: DatosFormulario) => void;
   onCalcular: () => void;
@@ -171,7 +174,16 @@ function Paso({ n, titulo, completo, extra }: { n: number; titulo: string; compl
   );
 }
 
-export default function Formulario({ datos, productos, onReintentarProductos, onChange, onCalcular, onLimpiar, errores }: Props) {
+export default function Formulario({
+  datos,
+  productos,
+  calcularNeto,
+  onReintentarProductos,
+  onChange,
+  onCalcular,
+  onLimpiar,
+  errores,
+}: Props) {
   const set = <K extends keyof DatosFormulario>(k: K, v: DatosFormulario[K]) => onChange({ ...datos, [k]: v });
 
   // Tras agregar o eliminar una fila APC, el foco va a la fila nueva o al botón "Agregar".
@@ -195,16 +207,12 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
   const clienteCompleto =
     [datos.cliente, datos.identificacion, datos.telefono, datos.correo].every((v) => v.trim()) && !correoInvalido;
 
-  const netoMayorQueBruto = positivo(datos.ingresoBruto) && Number(datos.ingresoNeto) > Number(datos.ingresoBruto);
+  // Ingreso neto: se calcula del bruto con la fórmula del tipo de cotización.
+  const ingreso = positivo(datos.ingresoBruto) ? calcularNeto(Number(datos.ingresoBruto)) : null;
   const saldo = Number(datos.saldoActual || 0);
   const montoNoCubreSaldo = positivo(datos.montoCliente) && saldo > Number(datos.montoCliente);
   const aEntregar = Number(datos.montoCliente) - saldo;
-  const montosCompletos =
-    positivo(datos.ingresoBruto) &&
-    positivo(datos.ingresoNeto) &&
-    positivo(datos.montoCliente) &&
-    !netoMayorQueBruto &&
-    !montoNoCubreSaldo;
+  const montosCompletos = positivo(datos.ingresoBruto) && positivo(datos.montoCliente) && !montoNoCubreSaldo;
 
   // Plazos: valores distintos de la columna plazo de los productos del tipo elegido.
   const lista = productos.estado === "listo" ? productos.productos : [];
@@ -303,16 +311,27 @@ export default function Formulario({ datos, productos, onReintentarProductos, on
             ayuda={`Mensual, en ${MONEDA.codigo}`}
             invalido={marcar && !positivo(datos.ingresoBruto)}
           />
-          <Campo
-            id="ingresoNeto"
-            etiqueta="Ingreso neto"
-            valor={datos.ingresoNeto}
-            onChange={(v) => set("ingresoNeto", v)}
-            numerico
-            prefijo={SIMBOLO_MONEDA}
-            ayuda={netoMayorQueBruto ? "No puede ser mayor que el ingreso bruto" : "Se usa para la relación cuota / ingreso"}
-            invalido={(marcar && !positivo(datos.ingresoNeto)) || netoMayorQueBruto}
-          />
+          <div className="ic-field ic-field--full ic-field--stack">
+            <span className="ic-field__label" id="ingresoNeto-etiqueta">Ingreso neto</span>
+            <output
+              className="ic-calculado"
+              htmlFor="ingresoBruto"
+              aria-labelledby="ingresoNeto-etiqueta"
+              aria-describedby="ingresoNeto-ayuda"
+              aria-live="polite"
+            >
+              <span className="ic-calculado__valor">{ingreso ? formatoMoneda(ingreso.neto) : "—"}</span>
+              <span className="ic-calculado__tag">Calculado</span>
+            </output>
+            <span id="ingresoNeto-ayuda" className="ic-field__hint">
+              {ingreso
+                ? ingreso.descuentos
+                    .filter((d) => d.monto > 0)
+                    .map((d) => `${d.concepto.replace(/ \(.*\)$/, "")} ${formatoMoneda(d.monto)}`)
+                    .join(" · ") || "Sin descuentos"
+                : "Se calcula del ingreso bruto con los descuentos de ley"}
+            </span>
+          </div>
           <Campo
             id="saldoActual"
             etiqueta="Saldo actual"

@@ -122,6 +122,7 @@ export default function Resultado({ r }: { r: R }) {
       </dl>
 
       <dl className="ic-stats">
+        <Dato etiqueta="Ingreso neto" valor={formatoMoneda(r.ingreso.neto)} />
         {r.totalApc > 0 && <Dato etiqueta="Importes APC" valor={formatoMoneda(r.totalApc)} />}
         <Dato
           etiqueta={r.totalApc > 0 ? "(Cuota + APC) / ingreso" : "Cuota / ingreso neto"}

@@ -22,6 +22,7 @@ import {
   type Resultado,
   type Solicitud,
 } from "@/lib/calculos";
+import { ingresoNetoPanama, type CalculoIngresoNeto } from "./ingresoNeto";
 
 /** Valores numéricos que cada tipo puede ajustar. */
 export type ParametrosCotizacion = {
@@ -41,6 +42,8 @@ export type ReglasCotizacion = {
   codigo: string;
   nombre: string;
   parametros: ParametrosCotizacion;
+  /** Cómo se obtiene el ingreso neto a partir del bruto (ver ./ingresoNeto.ts). */
+  ingresoNeto: CalculoIngresoNeto;
   validar: (s: Solicitud) => string[];
   calcular: (s: Solicitud) => Resultado;
 };
@@ -73,9 +76,6 @@ export function validarBase(s: Solicitud): string[] {
     errores.push(`El producto "${s.producto.etiqueta}" no tiene plazo definido en la matriz.`);
   if (!s.promotorIndependiente) errores.push('Selecciona una opción en "Promotor independiente".');
   if (!(s.ingresoBruto > 0)) errores.push("El ingreso bruto debe ser mayor que 0.");
-  if (!(s.ingresoNeto > 0)) errores.push("El ingreso neto debe ser mayor que 0.");
-  else if (s.ingresoBruto > 0 && s.ingresoNeto > s.ingresoBruto)
-    errores.push("El ingreso neto no puede ser mayor que el ingreso bruto.");
   if (!(s.saldoActual >= 0)) errores.push("El saldo actual no puede ser negativo.");
   if (!(s.montoCliente > 0)) errores.push("El monto cliente debe ser mayor que 0.");
   else if (s.saldoActual > 0 && s.montoCliente < s.saldoActual)
@@ -142,15 +142,21 @@ export function decidir(rechazo: string[], revision: string[], motivosAprobado: 
 // ---------------------------------------------------------------
 
 /** Cálculo común. Supone que `validarBase(s)` no devolvió errores. */
-export function calcularBase(s: Solicitud, p: ParametrosCotizacion): Resultado {
+export function calcularBase(
+  s: Solicitud,
+  p: ParametrosCotizacion,
+  calcularNeto: CalculoIngresoNeto = ingresoNetoPanama,
+): Resultado {
   const { detalle, puntaje, puntajeMaximo, nivelRiesgo } = puntuar(s, p);
   const producto = productoConPlazo(s);
   const cuota = cuotaMensual(s.montoCliente, producto.tasaAnual, producto.plazoMeses);
   const { importesApc, totalApc } = resumirApc(s);
+  const ingreso = calcularNeto(s.ingresoBruto);
+  if (!(ingreso.neto > 0)) throw new Error("El ingreso neto calculado no es mayor que 0.");
 
-  const relacion = (cuota + totalApc) / s.ingresoNeto;
+  const relacion = (cuota + totalApc) / ingreso.neto;
   // La capacidad de pago descuenta lo que ya paga en la APC.
-  const cuotaDisponible = Math.max(0, s.ingresoNeto * p.relacionCuotaMax - totalApc);
+  const cuotaDisponible = Math.max(0, ingreso.neto * p.relacionCuotaMax - totalApc);
   const montoMaximoSugerido = Math.min(
     montoParaCuota(cuotaDisponible, producto.tasaAnual, producto.plazoMeses),
     producto.montoMaximo,
@@ -188,6 +194,7 @@ export function calcularBase(s: Solicitud, p: ParametrosCotizacion): Resultado {
     fecha: new Date(),
     solicitud: s,
     parametros: p,
+    ingreso,
     producto,
     detalle,
     puntaje,
@@ -207,12 +214,18 @@ export function calcularBase(s: Solicitud, p: ParametrosCotizacion): Resultado {
 }
 
 /** Reglas que usan el cálculo base con los parámetros dados. */
-export function reglasBase(codigo: string, nombre: string, parametros: ParametrosCotizacion): ReglasCotizacion {
+export function reglasBase(
+  codigo: string,
+  nombre: string,
+  parametros: ParametrosCotizacion,
+  ingresoNeto: CalculoIngresoNeto = ingresoNetoPanama,
+): ReglasCotizacion {
   return {
     codigo,
     nombre,
     parametros,
+    ingresoNeto,
     validar: validarBase,
-    calcular: (s) => calcularBase(s, parametros),
+    calcular: (s) => calcularBase(s, parametros, ingresoNeto),
   };
 }

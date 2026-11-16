@@ -307,6 +307,33 @@
 .ic-field--stack:focus-within .ic-field__label { color: var(--ic-primary); }
 .ic-field--stack .ic-field__hint { margin-top: 0; line-height: 1.4; }
 
+/* Valor calculado (no editable), con la misma altura que un campo. */
+.ic-calculado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ic-space-2);
+  height: var(--ic-field-h);
+  padding: 0 var(--ic-space-4);
+  border: 1px dashed var(--ic-border);
+  border-radius: var(--ic-radius-lg);
+  background: var(--ic-surface-alt);
+}
+.ic-calculado__valor {
+  font-size: var(--ic-fs-md);
+  font-weight: var(--ic-fw-bold);
+  color: var(--ic-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.ic-calculado__tag {
+  padding: 2px var(--ic-space-2);
+  border-radius: 999px;
+  background: var(--ic-primary-soft);
+  color: var(--ic-primary-active);
+  font-size: var(--ic-fs-xs);
+  font-weight: var(--ic-fw-medium);
+}
+
 /* Prefijo (símbolo de moneda) dentro del campo. */
 .ic-field__prefix {
   position: absolute;
@@ -748,5 +775,6 @@
   .ic-choice:hover, .ic-choice:focus-visible, .ic-choice--current { border-color: var(--ic-primary); }
   .ic-form-group + .ic-form-group { border-top-color: var(--ic-border-strong); }
   .ic-field--stack .ic-input,
-  .ic-field--stack .ic-select { border-color: var(--ic-border-strong); }
+  .ic-field--stack .ic-select,
+  .ic-calculado { border-color: var(--ic-border-strong); }
 }

@@ -10,7 +10,7 @@ import SelectorTipoCotizacion from "@/components/SelectorTipoCotizacion";
 import { CRITERIOS, type CodigoTipoCotizacion, type Producto, type TipoCotizacion } from "@/config/matriz";
 import { cargarProductos, cargarTiposCotizacion } from "@/lib/catalogo";
 import { SELECCION_VACIA, type Resultado as R, type Solicitud } from "@/lib/calculos";
-import { calcular, validar } from "@/lib/cotizaciones";
+import { calcular, reglasDe, validar } from "@/lib/cotizaciones";
 
 const INICIAL: DatosFormulario = {
   cliente: "",
@@ -22,7 +22,6 @@ const INICIAL: DatosFormulario = {
   producto: "",
   promotor: "",
   ingresoBruto: "",
-  ingresoNeto: "",
   saldoActual: "",
   montoCliente: "",
   importesApc: [],
@@ -42,7 +41,6 @@ const aSolicitud = (d: DatosFormulario, productos: Producto[], tipo: CodigoTipoC
   producto: productos.find((p) => p.id === d.producto) ?? null,
   promotorIndependiente: d.promotor || null,
   ingresoBruto: Number(d.ingresoBruto),
-  ingresoNeto: Number(d.ingresoNeto),
   saldoActual: Number(d.saldoActual || 0),
   montoCliente: Number(d.montoCliente),
   importesApc: d.importesApc.map((f) => ({ detalle: f.detalle || null, monto: Number(f.monto) })),
@@ -122,12 +120,12 @@ function Evaluacion() {
   // Tras el primer intento, la validación se recalcula en cada cambio (en línea).
   const errores = intentado ? validar(aSolicitud(datos, listaProductos, tipo)) : [];
 
-  // + plazo, producto, promotor, ingreso bruto, ingreso neto y monto cliente (el saldo actual es opcional)
-  const totalCampos = CRITERIOS.length + 6;
+  // + plazo, producto, promotor, ingreso bruto y monto cliente (el saldo actual es opcional; el neto se calcula)
+  const totalCampos = CRITERIOS.length + 5;
   const completados =
     CRITERIOS.filter((c) => datos.seleccion[c.clave]).length +
     [datos.plazo, datos.producto, datos.promotor].filter(Boolean).length +
-    [datos.ingresoBruto, datos.ingresoNeto, datos.montoCliente].filter((v) => Number(v) > 0).length;
+    [datos.ingresoBruto, datos.montoCliente].filter((v) => Number(v) > 0).length;
 
   const cambiar = (d: DatosFormulario) => {
     setDatos(d);
@@ -230,6 +228,7 @@ function Evaluacion() {
             <Formulario
               datos={datos}
               productos={productos}
+              calcularNeto={reglasDe(tipo ?? "").ingresoNeto}
               onReintentarProductos={() => setRecargaProductos((n) => n + 1)}
               onChange={cambiar} onCalcular={onCalcular} onLimpiar={limpiar} errores={errores} />
           </div>
