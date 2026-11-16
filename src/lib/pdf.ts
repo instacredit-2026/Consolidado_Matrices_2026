@@ -91,24 +91,66 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     y = finalY() + separacion;
   };
 
-  // --- Datos del cliente --------------------------------------
-  titulo("Datos del cliente");
-  tablaClaveValor([
+  // --- Datos del cliente | Ingresos (dos columnas) -------------
+  const separacionColumnas = 6;
+  const anchoColumna = (ancho - margen * 2 - separacionColumnas) / 2;
+  const xDerecha = margen + anchoColumna + separacionColumnas;
+  const yColumnas = y;
+
+  /** Tabla clave-valor en media página. `destacar`: índices de filas en negrita (con fondo si `fondo`). */
+  const tablaColumna = (
+    texto: string,
+    x: number,
+    filas: [string, string][],
+    opciones: { montos?: boolean; destacar?: number[]; fondo?: number[] } = {},
+  ) => {
+    doc.setTextColor(...VERDE_OSCURO);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(t(texto), x, yColumnas);
+    autoTable(doc, {
+      startY: yColumnas + 2,
+      margin: { left: x, right: ancho - x - anchoColumna },
+      tableWidth: anchoColumna,
+      body: filas.map(([k, v]) => [t(k), t(v)]),
+      theme: "grid",
+      styles: estiloTabla,
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: anchoColumna * 0.6, fillColor: [247, 248, 250] },
+        1: { halign: opciones.montos ? "right" : "left" },
+      },
+      didParseCell: (d) => {
+        if (d.section !== "body") return;
+        if (opciones.destacar?.includes(d.row.index)) d.cell.styles.fontStyle = "bold";
+        if (opciones.fondo?.includes(d.row.index)) d.cell.styles.fillColor = [230, 242, 224];
+      },
+    });
+    return finalY();
+  };
+
+  const finCliente = tablaColumna("Datos del cliente", margen, [
     ["Nombre", r.solicitud.cliente || "-"],
     ["Identificación", r.solicitud.identificacion || "-"],
     ["Teléfono", r.solicitud.telefono || "-"],
     ["Correo", r.solicitud.correo || "-"],
-    ["Ingreso bruto", formatoMoneda(r.solicitud.ingresoBruto)],
-    [
-      "Descuentos de ley",
-      `${formatoMoneda(r.ingreso.totalDescuentos)} (${r.ingreso.descuentos
-        .map((d) => `${d.concepto.replace(/ \(.*\)$/, "")} ${formatoMoneda(d.monto)}`)
-        .join(", ")})`,
-    ],
-    ["Ingreso neto (calculado)", formatoMoneda(r.ingreso.neto)],
     ["Saldo actual", formatoMoneda(r.solicitud.saldoActual)],
     ["Promotor independiente", r.solicitud.promotorIndependiente === "si" ? "Sí" : "No"],
   ]);
+
+  // Ingreso bruto, un renglón por cada descuento de ley, el total de descuentos y el neto.
+  const n = r.ingreso.descuentos.length;
+  const finIngresos = tablaColumna(
+    "Ingresos (mensual)",
+    xDerecha,
+    [
+      ["Ingreso bruto", formatoMoneda(r.ingreso.bruto)],
+      ...r.ingreso.descuentos.map((d): [string, string] => [`(-) ${d.concepto}`, formatoMoneda(d.monto)]),
+      ["Total descuentos de ley", formatoMoneda(r.ingreso.totalDescuentos)],
+      ["Ingreso neto", formatoMoneda(r.ingreso.neto)],
+    ],
+    { montos: true, destacar: [n + 1, n + 2], fondo: [n + 2] },
+  );
+  y = Math.max(finCliente, finIngresos) + separacion;
 
   // --- Criterios evaluados ------------------------------------
   titulo("Criterios evaluados");
