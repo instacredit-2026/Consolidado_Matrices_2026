@@ -23,6 +23,8 @@ const INICIAL: DatosFormulario = {
   ingresoBruto: "",
   ingresoNeto: "",
   saldoActual: "",
+  montoCliente: "",
+  importesApc: [],
 };
 
 /** Por debajo de este ancho el resultado queda debajo del formulario. */
@@ -39,7 +41,9 @@ const aSolicitud = (d: DatosFormulario, productos: Producto[]): Solicitud => ({
   promotorIndependiente: d.promotor || null,
   ingresoBruto: Number(d.ingresoBruto),
   ingresoNeto: Number(d.ingresoNeto),
-  saldoActual: Number(d.saldoActual),
+  saldoActual: Number(d.saldoActual || 0),
+  montoCliente: Number(d.montoCliente),
+  importesApc: d.importesApc.map((f) => ({ detalle: f.detalle || null, monto: Number(f.monto) })),
 });
 
 const mensajeError = (e: unknown) =>
@@ -116,12 +120,12 @@ function Evaluacion() {
   // Tras el primer intento, la validación se recalcula en cada cambio (en línea).
   const errores = intentado ? validar(aSolicitud(datos, listaProductos)) : [];
 
-  // + plazo, producto, promotor, ingreso bruto, ingreso neto y saldo actual
+  // + plazo, producto, promotor, ingreso bruto, ingreso neto y monto cliente (el saldo actual es opcional)
   const totalCampos = CRITERIOS.length + 6;
   const completados =
     CRITERIOS.filter((c) => datos.seleccion[c.clave]).length +
     [datos.plazo, datos.producto, datos.promotor].filter(Boolean).length +
-    [datos.ingresoBruto, datos.ingresoNeto, datos.saldoActual].filter((v) => Number(v) > 0).length;
+    [datos.ingresoBruto, datos.ingresoNeto, datos.montoCliente].filter((v) => Number(v) > 0).length;
 
   const cambiar = (d: DatosFormulario) => {
     setDatos(d);

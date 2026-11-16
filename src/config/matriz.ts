@@ -78,6 +78,18 @@ export const PROMOTOR_INDEPENDIENTE = [
 export type PromotorIndependiente = (typeof PROMOTOR_INDEPENDIENTE)[number]["id"];
 
 /**
+ * Importes APC: deudas del cliente en la APC. Cada fila tiene un detalle y un monto;
+ * el importe final a considerar es monto × factor, y la suma de todos se agrega a la
+ * cuota nueva al calcular la relación cuota / ingreso neto.
+ */
+export const DETALLE_APC = [
+  { id: "1", etiqueta: "1 – Préstamo", factor: 1 },
+  { id: "2", etiqueta: "2 – Tarjeta de crédito", factor: 0.03 },
+] as const;
+
+export type DetalleApc = (typeof DETALLE_APC)[number]["id"];
+
+/**
  * Umbrales sobre el puntaje de CRITERIOS. Con solo Provincia el máximo es 10:
  * ajústalos cuando tengas los valores reales.
  */

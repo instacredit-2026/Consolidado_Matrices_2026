@@ -117,7 +117,17 @@ export default function Resultado({ r }: { r: R }) {
       </div>
 
       <dl className="ic-stats">
-        <Dato etiqueta="Cuota / ingreso neto" valor={formatoPorcentaje(r.relacionCuotaIngreso)} />
+        <Dato etiqueta="Monto cliente" valor={formatoMoneda(r.solicitud.montoCliente)} />
+        <Dato etiqueta="Saldo actual" valor={formatoMoneda(r.solicitud.saldoActual)} />
+        <Dato etiqueta="A entregar" valor={formatoMoneda(r.montoAEntregar)} />
+      </dl>
+
+      <dl className="ic-stats">
+        {r.totalApc > 0 && <Dato etiqueta="Importes APC" valor={formatoMoneda(r.totalApc)} />}
+        <Dato
+          etiqueta={r.totalApc > 0 ? "(Cuota + APC) / ingreso" : "Cuota / ingreso neto"}
+          valor={formatoPorcentaje(r.relacionCuotaIngreso)}
+        />
         <Dato etiqueta="Monto máx. sugerido" valor={formatoMoneda(r.montoMaximoSugerido)} />
         <Dato etiqueta="Total a pagar" valor={formatoMoneda(r.totalAPagar)} />
       </dl>

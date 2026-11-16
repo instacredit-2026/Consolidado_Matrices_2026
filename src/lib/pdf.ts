@@ -44,6 +44,10 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   const margen = 15;
   let y = 0;
   const der = (content: string) => ({ content, styles: { halign: "right" as const } });
+  // Con importes APC hay una tabla más: se compacta para que el informe siga cabiendo en una página.
+  const compacto = r.importesApc.length > 0;
+  const estiloTabla = { fontSize: compacto ? 9 : 9.5, cellPadding: compacto ? 1 : 1.5 };
+  const separacion = compacto ? 6 : 7;
   const finalY = () => (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   // --- Encabezado ---------------------------------------------
@@ -81,10 +85,10 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
       margin: { left: margen, right: margen },
       body: filas.map(([k, v]) => [t(k), t(v)]),
       theme: "grid",
-      styles: { fontSize: 9.5, cellPadding: 1.5 },
+      styles: estiloTabla,
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 65, fillColor: [247, 248, 250] } },
     });
-    y = finalY() + 7;
+    y = finalY() + separacion;
   };
 
   // --- Datos del cliente --------------------------------------
@@ -109,12 +113,30 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     body: r.detalle.map((d) => [t(d.titulo), t(d.opcion), String(d.puntos), String(d.maximo)]),
     foot: [["Total", "", der(String(r.puntaje)), der(String(r.puntajeMaximo))]],
     theme: "grid",
-    styles: { fontSize: 9.5, cellPadding: 1.5 },
+    styles: estiloTabla,
     headStyles: { fillColor: VERDE },
     footStyles: { fillColor: [230, 242, 224], textColor: 20 },
     columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
   });
-  y = finalY() + 7;
+  y = finalY() + separacion;
+
+  // --- Importes APC (solo si hay) -----------------------------
+  if (r.importesApc.length) {
+    titulo("Importes APC");
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margen, right: margen },
+      head: [["Detalle", der("Importe APC"), der("Importe final a considerar")]],
+      body: r.importesApc.map((f) => [t(f.etiqueta), formatoMoneda(f.monto), formatoMoneda(f.importeFinal)]),
+      foot: [["Total", "", der(formatoMoneda(r.totalApc))]],
+      theme: "grid",
+      styles: estiloTabla,
+      headStyles: { fillColor: VERDE },
+      footStyles: { fillColor: [230, 242, 224], textColor: 20 },
+      columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
+    });
+    y = finalY() + separacion;
+  }
 
   // --- Análisis financiero ------------------------------------
   titulo("Análisis financiero");
@@ -122,21 +144,29 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
     ["Producto", r.producto.etiqueta],
     ["Tasa de interés anual", formatoPorcentaje(r.producto.tasaAnual, 2)],
     ["Plazo", `${r.producto.plazoMeses} meses`],
+    ["Monto cliente", formatoMoneda(r.solicitud.montoCliente)],
+    ["Monto a entregar", formatoMoneda(r.montoAEntregar)],
     ["Cuota mensual estimada", formatoMoneda(r.cuotaMensual)],
     ["Total a pagar", formatoMoneda(r.totalAPagar)],
-    ["Relación cuota / ingreso neto", formatoPorcentaje(r.relacionCuotaIngreso)],
+    ...(r.totalApc > 0 ? ([["Importes APC (mensual)", formatoMoneda(r.totalApc)]] as [string, string][]) : []),
+    [
+      r.totalApc > 0 ? "Relación (cuota + APC) / ingreso neto" : "Relación cuota / ingreso neto",
+      formatoPorcentaje(r.relacionCuotaIngreso),
+    ],
     ["Monto máximo sugerido", formatoMoneda(r.montoMaximoSugerido)],
     ["Monto máximo del producto", formatoMoneda(r.producto.montoMaximo)],
   ]);
 
   // --- Resultado ----------------------------------------------
   doc.setFontSize(10);
-  const lineasTexto = [...r.motivos, ...r.advertencias].reduce(
-    (n, m) => n + doc.splitTextToSize(t(`- ${m}`), ancho - margen * 2 - 4).length,
-    0,
-  );
-  const altoResultado = 4 + 21 + (lineasTexto + 2) * 5 + 6;
-  if (y + altoResultado > doc.internal.pageSize.getHeight() - 18) {
+  // Alto exacto del bloque: título (4) + banner (21) + por cada lista: encabezado (5) + líneas × 5 + espacio (3).
+  const altoLista = (items: string[]) =>
+    items.length
+      ? 5 + items.reduce((n, m) => n + doc.splitTextToSize(t(`- ${m}`), ancho - margen * 2 - 4).length, 0) * 5 + 3
+      : 0;
+  const altoResultado = 4 + 21 + altoLista(r.motivos) + altoLista(r.advertencias);
+  // El pie empieza 14 mm antes del borde inferior.
+  if (y + altoResultado > doc.internal.pageSize.getHeight() - 16) {
     doc.addPage();
     y = 20;
   }

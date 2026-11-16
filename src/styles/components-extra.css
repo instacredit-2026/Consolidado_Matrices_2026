@@ -361,6 +361,72 @@
 .ic-field--error .ic-field__control--select::before,
 .ic-field--error .ic-field__control--select::after { border-color: var(--ic-danger); }
 
+/* ---------- Importes APC: filas que se agregan y eliminan ----------
+   En escritorio es una tabla (cabecera visible, etiquetas por fila ocultas);
+   en móvil cada fila es una tarjeta con sus etiquetas. */
+.ic-apc { display: grid; gap: var(--ic-space-2); margin-bottom: var(--ic-space-4); }
+.ic-apc__cabecera,
+.ic-apc__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 40px;
+  gap: var(--ic-space-3);
+  align-items: center;
+}
+.ic-apc__cabecera {
+  font-size: var(--ic-fs-sm);
+  font-weight: var(--ic-fw-medium);
+  color: var(--ic-text-strong);
+}
+.ic-apc__filas { display: grid; gap: var(--ic-space-3); margin: 0; padding: 0; list-style: none; }
+.ic-apc__label { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.ic-apc__final output,
+.ic-apc__num { text-align: right; }
+.ic-apc__final output {
+  display: block;
+  font-size: var(--ic-fs-md);
+  font-weight: var(--ic-fw-bold);
+  color: var(--ic-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.ic-apc__eliminar { color: var(--ic-text-muted); }
+.ic-apc__eliminar svg { width: 20px; height: 20px; }
+.ic-apc__eliminar:hover { background: var(--ic-danger-bg); color: var(--ic-danger); }
+.ic-apc__eliminar:active { background: var(--ic-danger-bg); }
+.ic-apc__eliminar:focus-visible { outline: none; box-shadow: var(--ic-field-ring-error); color: var(--ic-danger); }
+.ic-apc__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ic-space-3);
+  margin-top: var(--ic-space-1);
+  padding: var(--ic-space-3) var(--ic-space-4);
+  border-radius: var(--ic-radius-lg);
+  background: var(--ic-primary-soft);
+  color: var(--ic-text-strong);
+  font-size: var(--ic-fs-sm);
+}
+.ic-apc__total strong { font-size: var(--ic-fs-lg); color: var(--ic-primary-active); font-variant-numeric: tabular-nums; }
+.ic-apc__agregar { gap: var(--ic-space-2); }
+.ic-apc__agregar svg { width: 18px; height: 18px; }
+.ic-apc__nota { margin-top: var(--ic-space-3); }
+
+@media (max-width: 599.98px) {
+  .ic-apc__cabecera { display: none; }
+  .ic-apc__fila {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: var(--ic-space-4);
+    border: 1px solid var(--ic-border);
+    border-radius: var(--ic-radius-lg);
+    background: var(--ic-surface-alt);
+  }
+  .ic-apc__fila > .ic-field:first-child { grid-column: 1 / -1; }
+  .ic-apc__label { position: static !important; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
+  .ic-apc__final { display: flex; flex-direction: column; gap: var(--ic-space-2); }
+  .ic-apc__final-label { font-size: var(--ic-fs-sm); font-weight: var(--ic-fw-medium); color: var(--ic-text-strong); }
+  .ic-apc__final output { text-align: left; line-height: var(--ic-field-h); }
+  .ic-apc__eliminar { grid-column: 1 / -1; justify-self: end; }
+}
+
 /* ---------- Listas dentro de alertas / resultado ---------- */
 .ic-list {
   margin: 0;
@@ -663,6 +729,7 @@
   .ic-login__ver:active { transform: translateY(-50%); }
   .ic-choice:hover .ic-choice__chevron,
   .ic-choice:focus-visible .ic-choice__chevron { transform: none; }
+  .ic-apc__eliminar:active { transform: none; }
   .ic-spinner { animation-duration: 1.6s; }
 }
 
