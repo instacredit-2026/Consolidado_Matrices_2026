@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import prestamitoCalculadora from "@/assets/prestamito/calculadora.png";
 import AppShell from "@/components/AppShell";
 import Formulario, { type DatosFormulario, type EstadoProductos } from "@/components/Formulario";
 import Login from "@/components/Login";
@@ -238,11 +239,8 @@ function Evaluacion() {
               <Resultado key={resultado.fecha.getTime()} r={resultado} />
             ) : (
               <div className="ic-empty">
-                <span className="ic-empty__icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-                  </svg>
-                </span>
+                <img className="ic-empty__mascota" src={prestamitoCalculadora.src} alt="" aria-hidden="true" />
+
                 <p className="ic-empty__title">
                   {completados === totalCampos ? "Todo listo" : "Sin resultado todavía"}
                 </p>

@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { formatoMoneda, formatoPorcentaje, type Resultado as R } from "@/lib/calculos";
 import { cargarLogo } from "@/lib/logo";
 import { generarPDF } from "@/lib/pdf";
+import festejando from "@/assets/prestamito/festejando.png";
+import pensando from "@/assets/prestamito/pensando.png";
+
+/** Pose de Prestamito por decisión; en un rechazo no aparece. */
+const MASCOTA: Partial<Record<R["decision"], string>> = {
+  Aprobado: festejando.src,
+  "En revisión": pensando.src,
+};
 
 type Tono = "success" | "warning" | "danger";
 
@@ -79,6 +87,9 @@ export default function Resultado({ r }: { r: R }) {
             Riesgo {r.nivelRiesgo.toLowerCase()} · {r.puntaje} de {r.puntajeMaximo} puntos
           </p>
         </div>
+        {MASCOTA[r.decision] && (
+          <img className="ic-decision__mascota" src={MASCOTA[r.decision]} alt="" aria-hidden="true" />
+        )}
       </div>
 
       <div>

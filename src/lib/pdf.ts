@@ -2,14 +2,14 @@ import type { Resultado } from "./calculos";
 import { formatoMoneda, formatoPorcentaje } from "./calculos";
 
 const COLOR_DECISION: Record<Resultado["decision"], [number, number, number]> = {
-  Aprobado: [76, 156, 46],
+  Aprobado: [75, 157, 69],
   "En revisión": [183, 121, 31],
   Rechazado: [197, 48, 48],
 };
 
-// Colores del sistema de diseño Instacredit (src/styles/tokens.css).
-const VERDE: [number, number, number] = [76, 156, 46]; // --ic-primary
-const VERDE_OSCURO: [number, number, number] = [51, 107, 31]; // --ic-primary-active
+// Colores oficiales de marca (ver el :root de src/styles/components-extra.css).
+const VERDE: [number, number, number] = [75, 157, 69]; // --ic-primary #4B9D45
+const VERDE_OSCURO: [number, number, number] = [6, 37, 91]; // --ic-navy #06255B (títulos)
 
 /** Las fuentes estándar del PDF solo cubren Latin-1: limpiamos caracteres fuera de rango. */
 function t(s: string): string {
@@ -33,7 +33,8 @@ function nombreArchivo(r: Resultado): string {
 }
 
 /**
- * @param logo Bytes del ícono en PNG (ver `cargarLogo` en ./logo.ts). Si falta, el PDF se genera sin ícono.
+ * @param logo Bytes del logo blanco horizontal en PNG, proporción 640x159 (ver `cargarLogo` en ./logo.ts).
+ *             Si falta, el PDF se genera sin logo.
  */
 export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void> {
   const { jsPDF } = await import("jspdf");
@@ -53,10 +54,12 @@ export async function generarPDF(r: Resultado, logo?: Uint8Array): Promise<void>
   // --- Encabezado ---------------------------------------------
   doc.setFillColor(...VERDE);
   doc.rect(0, 0, ancho, 24, "F");
-  let xTitulo = margen;
+  const xTitulo = margen;
   if (logo) {
-    doc.addImage(logo, "PNG", margen, 4, 16, 16, "logo", "FAST");
-    xTitulo = margen + 20;
+    // Logo oficial (versión blanca) alineado a la derecha de la banda verde.
+    const altoLogo = 11;
+    const anchoLogo = altoLogo * (640 / 159);
+    doc.addImage(logo, "PNG", ancho - margen - anchoLogo, (24 - altoLogo) / 2, anchoLogo, altoLogo, "logo", "FAST");
   }
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");

@@ -5,6 +5,68 @@
    tocan; los ajustes de movimiento y materiales se hacen aquí.
    ========================================================================== */
 
+/* ---------- Marca Instacredit (Libro de Marca + "Soy Prestamito") ----------
+   Sobrescribe la paleta y la tipografía de tokens.css sin editar ese archivo.
+   Verde y navy dominan; los acentos (lima, cielo, amarillo, naranja) solo dan
+   alegría. Contraste: sobre lima o amarillo el texto va en navy. */
+:root {
+  --ic-primary:          #4B9D45;  /* Verde Pantone 362 C */
+  --ic-primary-hover:    #418A3C;
+  --ic-primary-active:   #367332;
+  --ic-primary-disabled: #A9D5A0;
+  --ic-primary-soft:     #E8F3E6;
+
+  --ic-navy:      #06255B;         /* Navy Pantone 281 C */
+  --ic-navy-soft: #E6EAF2;
+  --ic-lima:      #93BF02;
+  --ic-cielo:     #00A4E0;
+  --ic-amarillo:  #F2C20C;
+  --ic-naranja:   #F5821F;
+
+  --ic-bg:          #F2F4F7;
+  --ic-surface-alt: #F6F8FA;
+  --ic-nav-active:  var(--ic-primary-soft);
+  --ic-nav-hover:   #F0F3F7;
+  --ic-text-strong: #1E2A44;
+  --ic-text:        #333740;
+  --ic-text-muted:  #5B6170;
+  --ic-border:      #D9DDE4;
+
+  --ic-success:    #3F8A3A;        /* verde de marca algo más oscuro: legible como texto */
+  --ic-success-bg: #E8F3E6;
+  --ic-info:       var(--ic-navy);
+  --ic-info-bg:    var(--ic-navy-soft);
+  --ic-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ic-primary) 35%, transparent);
+
+  /* Títulos y cifras: Inter Tight. Cuerpo: Arial (sustituto de Helvética). */
+  --ic-font:         Arial, "Helvetica Neue", Helvetica, sans-serif;
+  --ic-font-display: "Inter Tight", Arial, sans-serif;
+}
+
+h1, h2, h3,
+.ic-section-title,
+.ic-subtitle,
+.ic-decision__label,
+.ic-hero-stat__value,
+.ic-stat__value,
+.ic-choice__code,
+.ic-choice__title,
+.ic-empty__title,
+.ic-step,
+.ic-calculado__valor,
+.ic-apc__total strong,
+.ic-header__app,
+.ic-btn {
+  font-family: var(--ic-font-display);
+}
+h1, h2, h3, .ic-section-title, .ic-subtitle { color: var(--ic-navy); }
+.ic-section-title { font-weight: 800; }
+.ic-section-title::after {
+  width: 72px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--ic-primary) 0 70%, var(--ic-lima) 70% 100%);
+}
+
 /* ---------- Tokens propios: movimiento y materiales ---------- */
 :root {
   /* Aproxima un resorte críticamente amortiguado (sin rebote). */
@@ -26,13 +88,54 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--ic-shadow-sm);
+  border-top: 4px solid var(--ic-navy);
 }
 .ic-header__brand { letter-spacing: -0.02em; }
-.ic-header__brand img { height: 36px; width: 36px; border-radius: var(--ic-radius-lg); }
+/* Logo oficial en versión blanca; altura fija y proporción original. */
+.ic-header__brand img { height: 32px; width: auto; }
 .ic-header__app {
   font-size: var(--ic-fs-md);
-  font-weight: var(--ic-fw-medium);
+  font-weight: 600;
   letter-spacing: .01em;
+}
+
+/* ---------- Menú lateral: ítem activo con acento de marca ---------- */
+.ic-nav__item--active,
+.ic-nav__item--active:hover {
+  color: var(--ic-navy);
+  box-shadow: inset 4px 0 0 var(--ic-primary);
+}
+.ic-nav__item--active svg { color: var(--ic-primary); }
+
+/* ---------- Fondo: hilo verde (motivo de la cultura 2026) ---------- */
+.ic-deco__hilo {
+  position: absolute;
+  top: calc(var(--ic-header-h) - 120px);
+  right: -140px;
+  width: 520px;
+  max-width: none;
+  opacity: .22;
+}
+
+/* ---------- Footer navy con slogan ---------- */
+.ic-footer {
+  background: var(--ic-navy);
+  border-top: 4px solid var(--ic-primary);
+  font-size: var(--ic-fs-sm);
+}
+.ic-footer__app {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ic-space-2);
+}
+.ic-footer__app img { width: 20px; height: 20px; }
+.ic-footer__slogan {
+  font-family: var(--ic-font-display);
+  font-size: var(--ic-fs-lg);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.01em;
 }
 
 /* ---------- Respuesta al pulsar (en pointer-down, no al soltar) ---------- */
@@ -135,7 +238,13 @@
   font-weight: var(--ic-fw-bold);
   letter-spacing: .02em;
 }
-.ic-choice--current .ic-choice__code { background: var(--ic-primary); color: var(--ic-on-primary); }
+/* Cada tipo lleva un color de marca (rotación verde → navy → lima → amarillo). */
+.ic-choice-grid > li:nth-child(4n+1) .ic-choice__code { background: var(--ic-primary); color: var(--ic-on-primary); }
+.ic-choice-grid > li:nth-child(4n+2) .ic-choice__code { background: var(--ic-navy);    color: var(--ic-on-primary); }
+.ic-choice-grid > li:nth-child(4n+3) .ic-choice__code { background: var(--ic-lima);    color: var(--ic-navy); }
+.ic-choice-grid > li:nth-child(4n+4) .ic-choice__code { background: var(--ic-amarillo); color: var(--ic-navy); }
+.ic-choice__code { font-weight: 800; }
+.ic-choice__title { color: var(--ic-navy); }
 .ic-choice__text { display: grid; gap: var(--ic-space-1); flex: 1; min-width: 0; }
 .ic-choice__title {
   font-size: 1.0625rem;
@@ -498,6 +607,16 @@
   color: var(--ic-text);
   font-variant-numeric: tabular-nums;
 }
+.ic-decision { position: relative; overflow: hidden; }
+.ic-decision__label { font-weight: 800; }
+/* Prestamito acompaña la decisión (festejando / pensando); no aparece en rechazos. */
+.ic-decision__mascota {
+  height: 96px;
+  width: auto;
+  margin: calc(var(--ic-space-3) * -1) 0 calc(var(--ic-space-5) * -1) auto;
+  align-self: flex-end;
+  animation: ic-pop 500ms var(--ic-ease-spring) 200ms both;
+}
 .ic-decision--success { background: var(--ic-success-bg); color: var(--ic-success); }
 .ic-decision--warning { background: var(--ic-warning-bg); color: var(--ic-warning); }
 .ic-decision--danger  { background: var(--ic-danger-bg);  color: var(--ic-danger); }
@@ -622,6 +741,7 @@
   background: var(--ic-primary-soft);
 }
 .ic-empty__icon svg { width: 34px; height: 34px; color: var(--ic-primary); }
+.ic-empty__mascota { height: 150px; width: auto; margin-bottom: var(--ic-space-2); }
 .ic-empty__title { margin: 0; font-size: var(--ic-fs-lg); font-weight: var(--ic-fw-bold); color: var(--ic-text-strong); }
 .ic-empty p { margin: 0; }
 .ic-empty__progress {
@@ -659,8 +779,8 @@
   opacity: .92;
 }
 .ic-header__badge {
-  color: var(--ic-primary);
-  background: var(--ic-on-primary);
+  color: var(--ic-navy);
+  background: var(--ic-amarillo);
 }
 .ic-header__user .ic-icon-btn:disabled { opacity: .6; cursor: progress; }
 
@@ -677,26 +797,82 @@
 }
 .ic-login--cargando { color: var(--ic-primary); }
 .ic-login--cargando .ic-spinner { width: 32px; height: 32px; border-width: 3px; }
+/* Tarjeta de dos paneles: marca (verde, con Prestamito) + formulario. */
+.ic-login__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 880px;
+  overflow: hidden;
+  border-radius: var(--ic-radius-xl);
+  background: var(--ic-surface);
+  box-shadow: var(--ic-shadow-card);
+}
+.ic-login__brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ic-space-2);
+  padding: var(--ic-space-6);
+  overflow: hidden;
+  background: var(--ic-primary);
+  color: var(--ic-on-primary);
+}
+.ic-login__hilo {
+  position: absolute;
+  right: -90px;
+  bottom: -110px;
+  width: 360px;
+  max-width: none;
+  opacity: .35;
+  pointer-events: none;
+}
+/* align-self evita que el flex estire el logo (nunca se deforma). */
+.ic-login__logo { position: relative; align-self: flex-start; height: 40px; width: auto; max-width: 100%; object-fit: contain; }
+.ic-login__app {
+  position: relative;
+  margin: 0;
+  font-family: var(--ic-font-display);
+  font-size: var(--ic-fs-md);
+  font-weight: 600;
+  opacity: .95;
+}
+.ic-login__claim {
+  position: relative;
+  display: none;
+  margin: var(--ic-space-4) 0 0;
+  max-width: 16ch;
+  font-family: var(--ic-font-display);
+  font-size: var(--ic-fs-2xl);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.ic-login__mascota { position: relative; display: none; }
 .ic-login__card {
   position: relative;
   display: grid;
+  align-content: center;
   gap: var(--ic-space-4);
-  width: 100%;
-  max-width: 420px;
+  padding: var(--ic-space-6);
 }
-.ic-login__brand { display: flex; align-items: center; gap: var(--ic-space-3); }
-.ic-login__brand img { border-radius: var(--ic-radius-lg); }
-.ic-login__marca {
-  margin: 0;
-  font-size: var(--ic-fs-xl);
-  font-weight: var(--ic-fw-bold);
-  letter-spacing: -0.02em;
-  color: var(--ic-primary);
-  line-height: 1.1;
+.ic-login__title { margin: 0; font-size: var(--ic-fs-2xl); font-weight: 800; letter-spacing: -0.02em; }
+.ic-login__lead { margin: 0; text-align: left; }
+@media (min-width: 768px) {
+  .ic-login__panel { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); min-height: 520px; }
+  .ic-login__brand { padding: var(--ic-space-10) var(--ic-space-8) 0; }
+  .ic-login__claim { display: block; }
+  .ic-login__mascota {
+    display: block;
+    width: 220px;
+    height: auto;
+    margin: auto auto 0;
+    align-self: center;
+    animation: ic-appear 600ms var(--ic-ease-spring) 150ms both;
+  }
+  .ic-login__card { padding: var(--ic-space-10); }
 }
-.ic-login__app { margin: 0; font-size: var(--ic-fs-sm); color: var(--ic-text-muted); }
-.ic-login__title { margin: var(--ic-space-2) 0 0; }
-.ic-login__lead { margin: 0; }
 .ic-login__clave .ic-input { padding-right: 52px; }
 .ic-login__ver {
   position: absolute;
@@ -739,6 +915,8 @@
   .ic-card--elevated { padding: var(--ic-space-5); }
   .ic-form-actions .ic-btn { width: 100%; }
   .ic-decision__label { font-size: var(--ic-fs-xl); }
+  .ic-decision__mascota { height: 76px; }
+  .ic-deco__hilo { width: 360px; right: -160px; }
   .ic-header__app, .ic-header__email { display: none; }
   .ic-header__user { margin-left: 0; }
 }
@@ -749,7 +927,9 @@
   .ic-result,
   .ic-appear,
   .ic-step svg,
-  .ic-decision__icon { animation: ic-fade 200ms ease both; }
+  .ic-decision__icon,
+  .ic-decision__mascota,
+  .ic-login__mascota { animation: ic-fade 200ms ease both; }
   .ic-sidebar, .ic-main { transition: none; }
   .ic-meter__bar { transition: none; }
   .ic-btn:active, .ic-icon-btn:active, .ic-nav__item:active, .ic-choice:active { transform: none; }
@@ -768,6 +948,7 @@
 @media (prefers-contrast: more) {
   .ic-header { background: var(--ic-primary-active); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .ic-card--elevated,
+  .ic-login__panel,
   .ic-hero-stat,
   .ic-stat,
   .ic-decision { border: 1px solid var(--ic-border-strong); }

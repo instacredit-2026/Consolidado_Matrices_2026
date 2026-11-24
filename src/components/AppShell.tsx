@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import icono from "@/assets/icono.svg";
+import logoClaro from "@/assets/marca/logo-claro.png";
+import isotipo from "@/assets/icono.png";
+import hilo from "@/assets/marca/hilo-esquina-verde.png";
 import { useSesion } from "@/lib/sesion";
 
 const MOVIL = "(max-width: 991.98px)";
@@ -176,9 +178,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={clases}>
       <header className="ic-header">
-        <a href="#evaluacion" className="ic-header__brand" aria-label="Inicio">
-          <img src={icono.src} alt="" width={36} height={36} />
-          <span>Instacredit</span>
+        <a href="#evaluacion" className="ic-header__brand" aria-label="Instacredit, inicio">
+          <img src={logoClaro.src} alt="" width={129} height={32} />
         </a>
         <button
           className="ic-icon-btn"
@@ -245,16 +246,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="ic-main">
         <div className="ic-deco" aria-hidden="true">
-          <span className="ic-deco__blob ic-deco__blob--1" />
-          <span className="ic-deco__blob ic-deco__blob--2" />
+          <img className="ic-deco__hilo" src={hilo.src} alt="" />
         </div>
 
         <div className="ic-container">{children}</div>
 
         <footer className="ic-footer">
-          <span>Matriz Automatizada</span>
-          <span>{new Date().getFullYear()} Instacredit</span>
-          <span />
+          <span className="ic-footer__app">
+            <img src={isotipo.src} alt="" width={20} height={20} />
+            Matriz Automatizada
+          </span>
+          <span className="ic-footer__slogan">¡Apoyándote siempre!</span>
+          <span>© {new Date().getFullYear()} Instacredit</span>
         </footer>
       </main>
     </div>
