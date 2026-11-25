@@ -1,22 +1,12 @@
 "use client";
 
-import {
-  CRITERIOS,
-  MONEDA,
-  PROMOTOR_INDEPENDIENTE,
-  type ClaveCriterio,
-  type Producto,
-  type PromotorIndependiente,
-} from "@/config/matriz";
+import { MONEDA, PROMOTOR_INDEPENDIENTE, type Producto, type PromotorIndependiente } from "@/config/matriz";
 import { formatoMoneda } from "@/lib/calculos";
 import type { CalculoIngresoNeto } from "@/lib/cotizaciones";
 
 export type DatosFormulario = {
-  seleccion: Record<ClaveCriterio, string>;
-  /** Plazo en meses, como texto (columna plazo de producto_credito). */
+  /** Plazo que pide el cliente, en meses, como texto (valores de la columna plazo de producto_credito). */
   plazo: string;
-  /** id del producto elegido (producto_credito.id). */
-  producto: string;
   promotor: PromotorIndependiente | "";
   /** Ingreso bruto mensual; el neto no se ingresa, se calcula. */
   ingresoBruto: string;
@@ -168,13 +158,7 @@ export default function Formulario({
 
   // Tras el primer intento de cálculo, los campos pendientes se marcan en línea.
   const marcar = errores.length > 0;
-  const totalCriterios = CRITERIOS.length + 3; // + plazo, producto y promotor
-  const elegidos =
-    CRITERIOS.filter((c) => datos.seleccion[c.clave]).length +
-    Number(Boolean(datos.plazo)) +
-    Number(Boolean(datos.producto)) +
-    Number(Boolean(datos.promotor));
-  const criteriosCompletos = elegidos === totalCriterios;
+  const condicionesCompletas = Boolean(datos.plazo && datos.promotor);
 
   // Ingreso neto: se calcula del bruto con la fórmula del tipo de cotización.
   const ingreso = positivo(datos.ingresoBruto) ? calcularNeto(Number(datos.ingresoBruto)) : null;
@@ -184,23 +168,11 @@ export default function Formulario({
   const montosCompletos = positivo(datos.ingresoBruto) && positivo(datos.montoCliente) && !montoNoCubreSaldo;
 
   // Plazos: valores distintos de la columna plazo de los productos del tipo elegido.
+  // El producto no se elige: se sugiere en el resultado según el ingreso neto y el plazo.
   const lista = productos.estado === "listo" ? productos.productos : [];
   const plazos = [...new Set(lista.map((p) => p.plazoMeses).filter((p): p is number => p !== null))].sort((a, b) => a - b);
-  // Con un plazo elegido, solo se ofrecen los productos de ese plazo.
-  const productosVisibles = datos.plazo ? lista.filter((p) => String(p.plazoMeses) === datos.plazo) : lista;
   const estadoLista =
     productos.estado === "cargando" ? "Cargando…" : productos.estado === "error" ? "No se pudieron cargar" : null;
-
-  const elegirPlazo = (plazo: string) => {
-    const actual = lista.find((p) => p.id === datos.producto);
-    const sigue = actual && (!plazo || String(actual.plazoMeses) === plazo);
-    onChange({ ...datos, plazo, producto: sigue ? datos.producto : "" });
-  };
-
-  const elegirProducto = (id: string) => {
-    const p = lista.find((x) => x.id === id);
-    onChange({ ...datos, producto: id, plazo: p?.plazoMeses ? String(p.plazoMeses) : datos.plazo });
-  };
 
   return (
     <form
@@ -274,47 +246,18 @@ export default function Formulario({
       </fieldset>
 
       <fieldset className="ic-form-group">
-        <Paso
-          n={2}
-          titulo="Criterios"
-          completo={criteriosCompletos}
-          extra={
-            <span className={`ic-badge ic-badge--${criteriosCompletos ? "success" : "info"} ic-subtitle__count`}>
-              {elegidos}/{totalCriterios}
-            </span>
-          }
-        />
+        <Paso n={2} titulo="Plazo del cliente" completo={condicionesCompletas} />
         <div className="ic-form-grid">
-          {CRITERIOS.map((c) => (
-            <Selector
-              key={c.clave}
-              id={c.clave}
-              etiqueta={c.titulo}
-              valor={datos.seleccion[c.clave]}
-              onChange={(v) => set("seleccion", { ...datos.seleccion, [c.clave]: v })}
-              opciones={c.opciones.map((o) => ({ valor: o.id, texto: o.etiqueta }))}
-              invalido={marcar && !datos.seleccion[c.clave]}
-            />
-          ))}
           <Selector
             id="plazo"
             etiqueta="Plazo"
             valor={datos.plazo}
-            onChange={elegirPlazo}
+            onChange={(v) => set("plazo", v)}
             opciones={plazos.map((p) => ({ valor: String(p), texto: `${p} meses` }))}
             invalido={marcar && !datos.plazo}
             estado={estadoLista ?? (plazos.length ? null : "Sin plazos para este tipo")}
             ocupado={productos.estado === "cargando"}
-          />
-          <Selector
-            id="producto"
-            etiqueta="Producto"
-            valor={datos.producto}
-            onChange={elegirProducto}
-            opciones={productosVisibles.map((p) => ({ valor: p.id, texto: p.etiqueta }))}
-            invalido={marcar && !datos.producto}
-            estado={estadoLista ?? (productosVisibles.length ? null : "Sin productos para este tipo")}
-            ocupado={productos.estado === "cargando"}
+            ayuda="El producto se sugiere con este plazo y el ingreso neto"
           />
           <Selector
             id="promotor"
@@ -322,7 +265,7 @@ export default function Formulario({
             valor={datos.promotor}
             onChange={(v) => set("promotor", v as DatosFormulario["promotor"])}
             opciones={PROMOTOR_INDEPENDIENTE.map((o) => ({ valor: o.id, texto: o.etiqueta }))}
-            ayuda="Solo informativo: no suma puntos"
+            ayuda="Solo informativo"
             invalido={marcar && !datos.promotor}
           />
         </div>

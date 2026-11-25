@@ -602,6 +602,59 @@ h1, h2, h3, .ic-section-title, .ic-subtitle { color: var(--ic-navy); }
 .ic-table--compact td { padding: var(--ic-space-2) var(--ic-space-3); white-space: normal; }
 .ic-table__num { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap !important; }
 
+/* ---------- Resultado: categorización y producto sugerido ---------- */
+/* Categoría del cliente: panel navy (texto blanco), el dato que se lee primero. */
+.ic-categoria {
+  padding: var(--ic-space-5);
+  border-radius: var(--ic-radius-xl);
+  background: var(--ic-navy);
+  color: var(--ic-on-primary);
+}
+.ic-categoria .ic-hero-stat__label { color: color-mix(in srgb, var(--ic-on-primary) 75%, transparent); }
+.ic-categoria__perfil {
+  margin: var(--ic-space-1) 0 var(--ic-space-3);
+  font-family: var(--ic-font-display);
+  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 1.875rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.ic-categoria__rango {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ic-space-2) var(--ic-space-3);
+  margin: 0;
+  font-size: var(--ic-fs-sm);
+}
+/* Sobre navy, la insignia va en lima con texto navy (regla de contraste de la marca). */
+.ic-categoria .ic-badge { background: var(--ic-lima); color: var(--ic-navy); }
+
+.ic-sugerencia {
+  background: var(--ic-primary-soft);
+  box-shadow: inset 4px 0 0 var(--ic-primary);
+}
+.ic-sugerencia__nombre {
+  margin: var(--ic-space-1) 0;
+  font-family: var(--ic-font-display);
+  font-size: var(--ic-fs-xl);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ic-navy);
+  overflow-wrap: anywhere;
+}
+.ic-sugerencia .ic-hero-stat__value { margin-bottom: 0; color: var(--ic-primary-active); }
+.ic-alternativas__titulo { margin-bottom: var(--ic-space-2); }
+/* Por qué una opción no se puede ofrecer tal como se pidió. */
+.ic-oferta__motivo {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--ic-fs-xs);
+  color: var(--ic-danger);
+}
+
 /* ---------- Pila vertical con separación ---------- */
 .ic-stack { display: grid; gap: var(--ic-space-5); }
 .ic-note { margin: 0; font-size: var(--ic-fs-xs); color: var(--ic-text-muted); }

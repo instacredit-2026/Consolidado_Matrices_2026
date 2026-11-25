@@ -3,7 +3,7 @@
  * Hoy usa las reglas base. Cuando estén definidas sus reglas propias:
  *   - ajusta PARAMETROS o INGRESO_NETO (p. ej. crearIngresoNetoPanama({ seguroSocial: 0.1 })), o
  *   - reemplaza `validar` / `calcular` usando los pasos de ./base.ts
- *     (validarBase, puntuar, productoConPlazo, calcularBase).
+ *     (validarBase, productosElegibles, evaluarOferta, ordenarOfertas, calcularBase).
  */
 import { calcularBase, PARAMETROS_BASE, validarBase, type ParametrosCotizacion, type ReglasCotizacion } from "./base";
 import { ingresoNetoPanama, type CalculoIngresoNeto } from "./ingresoNeto";

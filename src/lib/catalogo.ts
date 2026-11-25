@@ -20,6 +20,7 @@ type FilaProducto = {
   score_min: number | null;
   score_max: number | null;
   perfil: { nombre: string; tipo_cotizacion: string };
+  rango_ingreso: { minimo: number; maximo: number | null; etiqueta_original: string };
 };
 
 /** Orden de la pantalla de selección; los códigos que no estén aquí van al final, por orden alfabético. */
@@ -52,7 +53,8 @@ export async function cargarProductos(tipo: CodigoTipoCotizacion): Promise<Produ
     .from("producto_credito")
     .select(
       "id, nombre, plazo, tasa, monto_al_cliente, monto_pagare, comision_desembolso, seguro, " +
-        "nivel_endeudamiento, score_min, score_max, perfil!inner(nombre, tipo_cotizacion)",
+        "nivel_endeudamiento, score_min, score_max, perfil!inner(nombre, tipo_cotizacion), " +
+        "rango_ingreso!inner(minimo, maximo, etiqueta_original)",
     )
     .eq("perfil.tipo_cotizacion", tipo)
     .order("id");
@@ -61,6 +63,9 @@ export async function cargarProductos(tipo: CodigoTipoCotizacion): Promise<Produ
     id: String(f.id),
     etiqueta: f.nombre,
     perfil: f.perfil.nombre,
+    ingresoMinimo: Number(f.rango_ingreso.minimo),
+    ingresoMaximo: numONulo(f.rango_ingreso.maximo),
+    rangoIngreso: f.rango_ingreso.etiqueta_original,
     // numeric de Postgres puede llegar como texto: se normaliza a number.
     tasaAnual: Number(f.tasa),
     plazoMeses: numONulo(f.plazo),

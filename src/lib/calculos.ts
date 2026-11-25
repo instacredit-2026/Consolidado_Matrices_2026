@@ -2,26 +2,17 @@
  * Tipos y utilidades comunes del cálculo. Las reglas de evaluación (validar,
  * calcular) están separadas por tipo de cotización en src/lib/cotizaciones/.
  */
-import {
-  CRITERIOS,
-  MONEDA,
-  UMBRALES,
-  type ClaveCriterio,
-  type CodigoTipoCotizacion,
-  type Producto,
-  type PromotorIndependiente,
-} from "@/config/matriz";
+import { MONEDA, type CodigoTipoCotizacion, type Producto, type PromotorIndependiente } from "@/config/matriz";
 import type { ParametrosCotizacion } from "@/lib/cotizaciones/base";
 import type { DesgloseIngreso } from "@/lib/cotizaciones/ingresoNeto";
 
 export type Solicitud = {
   /** Tipo de cotización elegido (PV, DD, EP, PYME…); decide qué reglas se aplican. */
   tipoCotizacion: CodigoTipoCotizacion;
-  seleccion: Record<ClaveCriterio, string>;
-  /** Plazo elegido en meses (columna plazo de producto_credito), o null si falta. */
+  /** Plazo que pide el cliente, en meses (columna plazo de producto_credito), o null si falta. */
   plazo: number | null;
-  /** Producto elegido (de los cargados para el tipo de cotización), o null si falta. */
-  producto: Producto | null;
+  /** Catálogo de productos del tipo de cotización, entre los que se busca la sugerencia. */
+  productos: Producto[];
   promotorIndependiente: PromotorIndependiente | null;
   /** Ingreso bruto mensual; el neto se calcula según el tipo de cotización. */
   ingresoBruto: number;
@@ -31,13 +22,23 @@ export type Solicitud = {
   montoCliente: number;
 };
 
-export type NivelRiesgo = "Bajo" | "Medio" | "Alto";
+/** Categorización del cliente: el perfil y el rango de ingreso neto en que cae. */
+export type Categoria = {
+  perfil: string;
+  rangoIngreso: string;
+};
 
-export type DetalleCriterio = {
-  titulo: string;
-  opcion: string;
-  puntos: number;
-  maximo: number;
+/** Un producto que corresponde al ingreso neto y al plazo del cliente, con sus cifras. */
+export type Oferta = {
+  producto: Producto & { plazoMeses: number };
+  cuotaMensual: number;
+  totalAPagar: number;
+  /** Cuota / ingreso neto. */
+  relacionCuotaIngreso: number;
+  /** Lo máximo que se puede prestar con este producto sin pasar la relación cuota / ingreso. */
+  montoMaximoSugerido: number;
+  /** Por qué no se puede ofrecer tal como se pidió; vacío = se puede ofrecer. */
+  impedimentos: string[];
 };
 
 export type Resultado = {
@@ -45,25 +46,17 @@ export type Resultado = {
   solicitud: Solicitud;
   /** Parámetros del tipo de cotización con que se evaluó. */
   parametros: ParametrosCotizacion;
-  /** Ingreso bruto, descuentos y neto calculado; el neto se usa para la relación cuota / ingreso. */
+  /** Ingreso bruto, descuentos y neto calculado; el neto decide el rango y la relación cuota / ingreso. */
   ingreso: DesgloseIngreso;
-  producto: Producto & { plazoMeses: number };
-  detalle: DetalleCriterio[];
-  puntaje: number;
-  puntajeMaximo: number;
-  nivelRiesgo: NivelRiesgo;
-  cuotaMensual: number;
-  totalAPagar: number;
-  /** Cuota / ingreso neto. */
-  relacionCuotaIngreso: number;
-  montoMaximoSugerido: number;
+  /** Categoría del producto sugerido (o de la primera opción si ninguna se puede ofrecer); null si no hay productos. */
+  categoria: Categoria | null;
+  /** Mejor producto que se puede ofrecer; null si ninguno cumple. */
+  sugerida: Oferta | null;
+  /** Los demás productos del rango y plazo del cliente (viables primero). */
+  alternativas: Oferta[];
   /** Lo que recibe el cliente: monto cliente − saldo actual. */
   montoAEntregar: number;
 };
-
-export const SELECCION_VACIA = Object.fromEntries(
-  CRITERIOS.map((c) => [c.clave, ""]),
-) as Record<ClaveCriterio, string>;
 
 /** Cuota mensual con amortización francesa (cuota fija). */
 export function cuotaMensual(monto: number, tasaAnual: number, plazoMeses: number): number {
@@ -79,13 +72,10 @@ export function montoParaCuota(cuota: number, tasaAnual: number, plazoMeses: num
   return (cuota * (1 - Math.pow(1 + r, -plazoMeses))) / r;
 }
 
-export function nivelDeRiesgo(
-  puntaje: number,
-  umbrales: { riesgoBajo: number; riesgoMedio: number } = UMBRALES,
-): NivelRiesgo {
-  if (puntaje >= umbrales.riesgoBajo) return "Bajo";
-  if (puntaje >= umbrales.riesgoMedio) return "Medio";
-  return "Alto";
+/** ¿El ingreso neto cae en el rango del producto? Se compara en centavos (la matriz usa 2 decimales). */
+export function enRangoIngreso(neto: number, p: Pick<Producto, "ingresoMinimo" | "ingresoMaximo">): boolean {
+  const n = Math.round(neto * 100) / 100;
+  return n >= p.ingresoMinimo && (p.ingresoMaximo === null || n <= p.ingresoMaximo);
 }
 
 const fmtMoneda = new Intl.NumberFormat(MONEDA.locale, {

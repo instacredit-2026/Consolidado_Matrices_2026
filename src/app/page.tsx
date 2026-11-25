@@ -8,15 +8,13 @@ import Login from "@/components/Login";
 import { SesionProvider, useSesion } from "@/lib/sesion";
 import Resultado from "@/components/Resultado";
 import SelectorTipoCotizacion from "@/components/SelectorTipoCotizacion";
-import { CRITERIOS, type CodigoTipoCotizacion, type Producto, type TipoCotizacion } from "@/config/matriz";
+import type { CodigoTipoCotizacion, Producto, TipoCotizacion } from "@/config/matriz";
 import { cargarProductos, cargarTiposCotizacion } from "@/lib/catalogo";
-import { SELECCION_VACIA, type Resultado as R, type Solicitud } from "@/lib/calculos";
+import type { Resultado as R, Solicitud } from "@/lib/calculos";
 import { calcular, reglasDe, validar } from "@/lib/cotizaciones";
 
 const INICIAL: DatosFormulario = {
-  seleccion: SELECCION_VACIA,
   plazo: "",
-  producto: "",
   promotor: "",
   ingresoBruto: "",
   saldoActual: "",
@@ -28,9 +26,8 @@ const APILADO = "(max-width: 1199.98px)";
 
 const aSolicitud = (d: DatosFormulario, productos: Producto[], tipo: CodigoTipoCotizacion | null): Solicitud => ({
   tipoCotizacion: tipo ?? "",
-  seleccion: d.seleccion,
   plazo: d.plazo ? Number(d.plazo) : null,
-  producto: productos.find((p) => p.id === d.producto) ?? null,
+  productos,
   promotorIndependiente: d.promotor || null,
   ingresoBruto: Number(d.ingresoBruto),
   saldoActual: Number(d.saldoActual || 0),
@@ -111,11 +108,10 @@ function Evaluacion() {
   // Tras el primer intento, la validación se recalcula en cada cambio (en línea).
   const errores = intentado ? validar(aSolicitud(datos, listaProductos, tipo)) : [];
 
-  // + plazo, producto, promotor, ingreso bruto y monto cliente (el saldo actual es opcional; el neto se calcula)
-  const totalCampos = CRITERIOS.length + 5;
+  // Plazo, promotor, ingreso bruto y monto cliente (el saldo actual es opcional; el neto se calcula)
+  const totalCampos = 4;
   const completados =
-    CRITERIOS.filter((c) => datos.seleccion[c.clave]).length +
-    [datos.plazo, datos.producto, datos.promotor].filter(Boolean).length +
+    [datos.plazo, datos.promotor].filter(Boolean).length +
     [datos.ingresoBruto, datos.montoCliente].filter((v) => Number(v) > 0).length;
 
   const cambiar = (d: DatosFormulario) => {
@@ -201,7 +197,7 @@ function Evaluacion() {
         <div className="ic-section__head">
           <h1 ref={tituloRef} tabIndex={-1} className="ic-section-title">Evaluación de Solicitud</h1>
         </div>
-        <p className="ic-lead">Completa los criterios, y calcula el resultado.</p>
+        <p className="ic-lead">Ingresa el ingreso, el monto y el plazo: te sugerimos el producto y la categoría del cliente.</p>
 
         <div className="ic-context">
           <span>Tipo de cotización</span>
@@ -236,7 +232,7 @@ function Evaluacion() {
                 </p>
                 <p>
                   {completados === totalCampos ? (
-                    <>Pulsa <strong>Calcular</strong> para ver la evaluación.</>
+                    <>Pulsa <strong>Calcular</strong> para ver el producto sugerido.</>
                   ) : (
                     <>Completa el formulario y pulsa <strong>Calcular</strong>.</>
                   )}

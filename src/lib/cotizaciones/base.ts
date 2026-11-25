@@ -3,15 +3,21 @@
  * ---------------------------------------------------------------
  * Cálculo común a todos los tipos de cotización. Cada tipo (pv.ts, dd.ts,
  * ep.ts, pyme.ts) parte de aquí y cambia solo lo que sea distinto:
- *   - sus `parametros` (umbrales de riesgo y de cuota / ingreso), o
+ *   - sus `parametros` (relación cuota / ingreso), o
  *   - su `validar` / `calcular`, reutilizando los pasos exportados abajo.
+ *
+ * Sugerencia de producto: entre los productos del tipo se toman los del plazo
+ * del cliente cuyo rango de ingreso neto contiene su neto. Cada uno se evalúa
+ * con el monto cliente; se sugiere el mejor que se pueda ofrecer (ver `ordenarOfertas`).
  */
-import { CRITERIOS, UMBRALES, type Opcion } from "@/config/matriz";
+import { UMBRALES, type Producto } from "@/config/matriz";
 import {
   cuotaMensual,
+  enRangoIngreso,
+  formatoMoneda,
+  formatoPorcentaje,
   montoParaCuota,
-  nivelDeRiesgo,
-  type DetalleCriterio,
+  type Oferta,
   type Resultado,
   type Solicitud,
 } from "@/lib/calculos";
@@ -19,11 +25,10 @@ import { ingresoNetoPanama, type CalculoIngresoNeto } from "./ingresoNeto";
 
 /** Valores numéricos que cada tipo puede ajustar. */
 export type ParametrosCotizacion = {
-  /** Puntaje mínimo para riesgo BAJO. */
-  riesgoBajo: number;
-  /** Puntaje mínimo para riesgo MEDIO (por debajo es ALTO). */
-  riesgoMedio: number;
-  /** Relación cuota / ingreso neto aceptable (0.40 = 40 %); define el monto máximo sugerido. */
+  /**
+   * Relación cuota / ingreso neto aceptable (0.40 = 40 %): un producto cuya cuota
+   * la supere no se sugiere, y define el monto máximo sugerido.
+   */
   relacionCuotaMax: number;
 };
 
@@ -41,8 +46,6 @@ export type ReglasCotizacion = {
 
 /** Parámetros por defecto (los de `UMBRALES` en matriz.ts). */
 export const PARAMETROS_BASE: ParametrosCotizacion = {
-  riesgoBajo: UMBRALES.riesgoBajo,
-  riesgoMedio: UMBRALES.riesgoMedio,
   relacionCuotaMax: UMBRALES.relacionCuotaMax,
 };
 
@@ -53,13 +56,7 @@ export const PARAMETROS_BASE: ParametrosCotizacion = {
 /** Errores de validación comunes a todos los tipos (vacía si todo está bien). */
 export function validarBase(s: Solicitud): string[] {
   const errores: string[] = [];
-  for (const c of CRITERIOS) {
-    if (!s.seleccion[c.clave]) errores.push(`Selecciona una opción en "${c.titulo}".`);
-  }
   if (!s.plazo) errores.push('Selecciona una opción en "Plazo".');
-  if (!s.producto) errores.push('Selecciona una opción en "Producto".');
-  else if (!(s.producto.plazoMeses && s.producto.plazoMeses > 0))
-    errores.push(`El producto "${s.producto.etiqueta}" no tiene plazo definido en la matriz.`);
   if (!s.promotorIndependiente) errores.push('Selecciona una opción en "Promotor independiente".');
   if (!(s.ingresoBruto > 0)) errores.push("El ingreso bruto debe ser mayor que 0.");
   if (!(s.saldoActual >= 0)) errores.push("El saldo actual no puede ser negativo.");
@@ -73,28 +70,51 @@ export function validarBase(s: Solicitud): string[] {
 // Pasos del cálculo (reutilizables desde cada tipo)
 // ---------------------------------------------------------------
 
-/** Puntaje de los CRITERIOS y nivel de riesgo. */
-export function puntuar(s: Solicitud, p: ParametrosCotizacion) {
-  const detalle: DetalleCriterio[] = CRITERIOS.map((c) => {
-    const opciones = c.opciones as readonly Opcion[];
-    const op = opciones.find((o) => o.id === s.seleccion[c.clave]);
-    if (!op) throw new Error(`Opción inválida en ${c.titulo}`);
-    return {
-      titulo: c.titulo,
-      opcion: op.etiqueta,
-      puntos: op.puntos,
-      maximo: Math.max(...opciones.map((o) => o.puntos)),
-    };
-  });
-  const puntaje = detalle.reduce((acc, d) => acc + d.puntos, 0);
-  const puntajeMaximo = detalle.reduce((acc, d) => acc + d.maximo, 0);
-  return { detalle, puntaje, puntajeMaximo, nivelRiesgo: nivelDeRiesgo(puntaje, p) };
+/** Productos del plazo pedido cuyo rango de ingreso neto contiene el neto del cliente. */
+export function productosElegibles(productos: Producto[], neto: number, plazo: number): Producto[] {
+  return productos.filter((p) => p.plazoMeses === plazo && enRangoIngreso(neto, p));
 }
 
-/** Producto elegido con su plazo garantizado (validar() ya lo comprobó). */
-export function productoConPlazo(s: Solicitud): Resultado["producto"] {
-  if (!s.producto?.plazoMeses) throw new Error("Producto inválido o sin plazo");
-  return { ...s.producto, plazoMeses: s.producto.plazoMeses };
+/** Cifras de un producto para el monto que pide el cliente, y lo que impide ofrecerlo. */
+export function evaluarOferta(s: Solicitud, producto: Producto, neto: number, p: ParametrosCotizacion): Oferta {
+  if (!producto.plazoMeses) throw new Error(`El producto "${producto.etiqueta}" no tiene plazo.`);
+  const conPlazo = { ...producto, plazoMeses: producto.plazoMeses };
+  const cuota = cuotaMensual(s.montoCliente, producto.tasaAnual, producto.plazoMeses);
+  const relacion = cuota / neto;
+  const montoMaximoSugerido = Math.min(
+    montoParaCuota(neto * p.relacionCuotaMax, producto.tasaAnual, producto.plazoMeses),
+    producto.montoMaximo,
+  );
+
+  const impedimentos: string[] = [];
+  if (s.montoCliente > producto.montoMaximo)
+    impedimentos.push(`El monto supera el máximo del producto (${formatoMoneda(producto.montoMaximo)}).`);
+  if (relacion > p.relacionCuotaMax)
+    impedimentos.push(
+      `La cuota es el ${formatoPorcentaje(relacion)} del ingreso neto (máximo ${formatoPorcentaje(p.relacionCuotaMax)}).`,
+    );
+
+  return {
+    producto: conPlazo,
+    cuotaMensual: cuota,
+    totalAPagar: cuota * producto.plazoMeses,
+    relacionCuotaIngreso: relacion,
+    montoMaximoSugerido,
+    impedimentos,
+  };
+}
+
+/**
+ * Orden de preferencia: primero las que se pueden ofrecer; luego la menor tasa
+ * (menor cuota para el cliente) y, a igual tasa, el mayor monto máximo.
+ */
+export function ordenarOfertas(ofertas: Oferta[]): Oferta[] {
+  return [...ofertas].sort(
+    (a, b) =>
+      Number(a.impedimentos.length > 0) - Number(b.impedimentos.length > 0) ||
+      a.producto.tasaAnual - b.producto.tasaAnual ||
+      b.producto.montoMaximo - a.producto.montoMaximo,
+  );
 }
 
 // ---------------------------------------------------------------
@@ -107,33 +127,26 @@ export function calcularBase(
   p: ParametrosCotizacion,
   calcularNeto: CalculoIngresoNeto = ingresoNetoPanama,
 ): Resultado {
-  const { detalle, puntaje, puntajeMaximo, nivelRiesgo } = puntuar(s, p);
-  const producto = productoConPlazo(s);
-  const cuota = cuotaMensual(s.montoCliente, producto.tasaAnual, producto.plazoMeses);
   const ingreso = calcularNeto(s.ingresoBruto);
   if (!(ingreso.neto > 0)) throw new Error("El ingreso neto calculado no es mayor que 0.");
+  if (!s.plazo) throw new Error("Falta el plazo.");
 
-  const relacion = cuota / ingreso.neto;
-  const cuotaDisponible = ingreso.neto * p.relacionCuotaMax;
-  const montoMaximoSugerido = Math.min(
-    montoParaCuota(cuotaDisponible, producto.tasaAnual, producto.plazoMeses),
-    producto.montoMaximo,
+  const ofertas = ordenarOfertas(
+    productosElegibles(s.productos, ingreso.neto, s.plazo).map((prod) => evaluarOferta(s, prod, ingreso.neto, p)),
   );
+  const sugerida = ofertas[0] && ofertas[0].impedimentos.length === 0 ? ofertas[0] : null;
+  const referencia = sugerida ?? ofertas[0];
 
   return {
     fecha: new Date(),
     solicitud: s,
     parametros: p,
     ingreso,
-    producto,
-    detalle,
-    puntaje,
-    puntajeMaximo,
-    nivelRiesgo,
-    cuotaMensual: cuota,
-    totalAPagar: cuota * producto.plazoMeses,
-    relacionCuotaIngreso: relacion,
-    montoMaximoSugerido,
+    categoria: referencia
+      ? { perfil: referencia.producto.perfil, rangoIngreso: referencia.producto.rangoIngreso }
+      : null,
+    sugerida,
+    alternativas: sugerida ? ofertas.slice(1) : ofertas,
     montoAEntregar: s.montoCliente - s.saldoActual,
   };
 }

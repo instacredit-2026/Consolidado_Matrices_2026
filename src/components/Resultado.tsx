@@ -1,15 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { formatoMoneda, formatoPorcentaje, type Resultado as R } from "@/lib/calculos";
-
-type Tono = "success" | "warning" | "danger";
-
-const TONO_RIESGO: Record<R["nivelRiesgo"], Tono> = {
-  Bajo: "success",
-  Medio: "warning",
-  Alto: "danger",
-};
+import { formatoMoneda, formatoPorcentaje, type Oferta, type Resultado as R } from "@/lib/calculos";
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
@@ -20,54 +11,62 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   );
 }
 
+/** Rango de score APC del producto, si la matriz lo define. */
+function rangoScore(o: Oferta): string | null {
+  const { scoreMin, scoreMax } = o.producto;
+  if (scoreMin === null) return null;
+  return scoreMax === null ? `Score ${scoreMin}+` : `Score ${scoreMin}–${scoreMax}`;
+}
+
 export default function Resultado({ r }: { r: R }) {
-  const [lleno, setLleno] = useState(false);
-
-  // Dos frames: el primero pinta la barra vacía, el segundo dispara el llenado.
-  useEffect(() => {
-    let id = requestAnimationFrame(() => {
-      id = requestAnimationFrame(() => setLleno(true));
-    });
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  const pos = (puntos: number) => `${(puntos / r.puntajeMaximo) * 100}%`;
+  const { sugerida, categoria } = r;
+  const plazo = r.solicitud.plazo;
 
   return (
     <div aria-live="polite" className="ic-stack ic-result">
-      <div>
-        <div className="ic-meter__head">
-          <span>Puntaje · Riesgo {r.nivelRiesgo.toLowerCase()}</span>
-          <strong>{r.puntaje} / {r.puntajeMaximo}</strong>
-        </div>
-        <div
-          className="ic-meter__track"
-          role="meter"
-          aria-label="Puntaje"
-          aria-valuemin={0}
-          aria-valuemax={r.puntajeMaximo}
-          aria-valuenow={r.puntaje}
-        >
-          <div
-            className={`ic-meter__bar ic-meter__bar--${TONO_RIESGO[r.nivelRiesgo]} ic-meter__bar--fill`}
-            style={{ width: lleno ? pos(r.puntaje) : "0%" }}
-          />
-          <div className="ic-meter__mark" style={{ left: pos(r.parametros.riesgoMedio) }} title="Mínimo riesgo medio" />
-          <div className="ic-meter__mark" style={{ left: pos(r.parametros.riesgoBajo) }} title="Mínimo riesgo bajo" />
-        </div>
-        <div className="ic-meter__scale" aria-hidden="true">
-          <span style={{ left: pos(r.parametros.riesgoMedio) }}>{r.parametros.riesgoMedio}</span>
-          <span style={{ left: pos(r.parametros.riesgoBajo) }}>{r.parametros.riesgoBajo}</span>
-        </div>
-      </div>
+      {/* ---- Categorización ---- */}
+      <section className="ic-categoria" aria-labelledby="categoria-titulo">
+        <p id="categoria-titulo" className="ic-hero-stat__label">Categorización del cliente</p>
+        {categoria ? (
+          <>
+            <p className="ic-categoria__perfil">{categoria.perfil}</p>
+            <p className="ic-categoria__rango">
+              <span className="ic-badge ic-badge--info">Rango {categoria.rangoIngreso}</span>
+              <span>Ingreso neto {formatoMoneda(r.ingreso.neto)}</span>
+            </p>
+          </>
+        ) : (
+          <p className="ic-categoria__rango">
+            Sin categoría: ningún producto a {plazo} meses cubre un ingreso neto de {formatoMoneda(r.ingreso.neto)}.
+          </p>
+        )}
+      </section>
 
-      <div className="ic-hero-stat">
-        <p className="ic-hero-stat__label">Cuota mensual</p>
-        <p className="ic-hero-stat__value">{formatoMoneda(r.cuotaMensual)}</p>
-        <p className="ic-note">
-          {r.producto.etiqueta} · tasa {formatoPorcentaje(r.producto.tasaAnual, 2)} anual · {r.producto.plazoMeses} meses
-        </p>
-      </div>
+      {/* ---- Producto sugerido ---- */}
+      {sugerida ? (
+        <div className="ic-hero-stat ic-sugerencia">
+          <p className="ic-hero-stat__label">Producto sugerido</p>
+          <p className="ic-sugerencia__nombre">{sugerida.producto.etiqueta}</p>
+          <p className="ic-note">
+            Tasa {formatoPorcentaje(sugerida.producto.tasaAnual, 2)} anual · {sugerida.producto.plazoMeses} meses
+            {rangoScore(sugerida) && <> · {rangoScore(sugerida)}</>}
+          </p>
+          <p className="ic-hero-stat__label ic-mt-4">Cuota mensual</p>
+          <p className="ic-hero-stat__value">{formatoMoneda(sugerida.cuotaMensual)}</p>
+        </div>
+      ) : (
+        <div role="alert" className="ic-alert ic-alert--warning">
+          <p className="ic-alert__title">No hay un producto para ofrecer con estos datos.</p>
+          {r.alternativas.length ? (
+            <p>
+              Hay productos para este ingreso y plazo, pero ninguno cubre el monto pedido. Revisa los motivos abajo o
+              baja el monto al máximo sugerido.
+            </p>
+          ) : (
+            <p>Prueba con otro plazo o revisa el ingreso bruto.</p>
+          )}
+        </div>
+      )}
 
       <dl className="ic-stats">
         <Dato etiqueta="Monto cliente" valor={formatoMoneda(r.solicitud.montoCliente)} />
@@ -75,33 +74,50 @@ export default function Resultado({ r }: { r: R }) {
         <Dato etiqueta="A entregar" valor={formatoMoneda(r.montoAEntregar)} />
       </dl>
 
-      <dl className="ic-stats">
-        <Dato etiqueta="Ingreso neto" valor={formatoMoneda(r.ingreso.neto)} />
-        <Dato etiqueta="Cuota / ingreso neto" valor={formatoPorcentaje(r.relacionCuotaIngreso)} />
-        <Dato etiqueta="Monto máx. sugerido" valor={formatoMoneda(r.montoMaximoSugerido)} />
-        <Dato etiqueta="Total a pagar" valor={formatoMoneda(r.totalAPagar)} />
-      </dl>
+      {sugerida && (
+        <dl className="ic-stats">
+          <Dato etiqueta="Cuota / ingreso neto" valor={formatoPorcentaje(sugerida.relacionCuotaIngreso)} />
+          <Dato etiqueta="Monto máx. sugerido" valor={formatoMoneda(sugerida.montoMaximoSugerido)} />
+          <Dato etiqueta="Total a pagar" valor={formatoMoneda(sugerida.totalAPagar)} />
+        </dl>
+      )}
 
-      <div className="ic-table-wrap ic-table-wrap--flat">
-        <table className="ic-table ic-table--compact">
-          <thead>
-            <tr>
-              <th>Criterio</th>
-              <th>Selección</th>
-              <th className="ic-table__num">Puntos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {r.detalle.map((d) => (
-              <tr key={d.titulo}>
-                <td>{d.titulo}</td>
-                <td>{d.opcion}</td>
-                <td className="ic-table__num">{d.puntos}/{d.maximo}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* ---- Otras opciones del mismo rango y plazo ---- */}
+      {r.alternativas.length > 0 && (
+        <div>
+          <p className="ic-hero-stat__label ic-alternativas__titulo">
+            {sugerida ? "Otras opciones" : "Productos de su rango"} ({r.alternativas.length})
+          </p>
+          <div className="ic-table-wrap ic-table-wrap--flat">
+            <table className="ic-table ic-table--compact">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th className="ic-table__num">Tasa</th>
+                  <th className="ic-table__num">Cuota</th>
+                  <th className="ic-table__num">Máx. sugerido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {r.alternativas.map((o) => (
+                  <tr key={o.producto.id}>
+                    <td>
+                      {o.producto.etiqueta}
+                      {rangoScore(o) && <span className="ic-note"> · {rangoScore(o)}</span>}
+                      {o.impedimentos.map((m) => (
+                        <span key={m} className="ic-oferta__motivo">{m}</span>
+                      ))}
+                    </td>
+                    <td className="ic-table__num">{formatoPorcentaje(o.producto.tasaAnual, 2)}</td>
+                    <td className="ic-table__num">{formatoMoneda(o.cuotaMensual)}</td>
+                    <td className="ic-table__num">{formatoMoneda(o.montoMaximoSugerido)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

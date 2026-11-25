@@ -1,20 +1,11 @@
 /**
- * MATRIZ DE EVALUACIÓN (EJEMPLO)
+ * MATRIZ DE EVALUACIÓN
  * ---------------------------------------------------------------
- * Aquí se editan:
- *   - las opciones de los menús desplegables que puntúan y sus puntos,
- *   - los umbrales de riesgo y de capacidad de pago.
- * Los tipos de cotización y los productos (tasa, plazo, monto) vienen de
- * Supabase (ver src/lib/catalogo.ts).
- *
- * Regla general: más puntos = menor riesgo.
+ * Aquí se editan la moneda, las opciones fijas del formulario y el umbral
+ * de capacidad de pago. Los tipos de cotización y los productos (rango de
+ * ingreso neto, plazo, tasa, monto) vienen de Supabase (ver src/lib/catalogo.ts):
+ * el producto se sugiere a partir del ingreso neto y el plazo del cliente.
  */
-
-export type Opcion = {
-  id: string;
-  etiqueta: string;
-  puntos: number;
-};
 
 /**
  * TIPO DE COTIZACIÓN (tabla `tipo_cotizacion` de Supabase).
@@ -34,13 +25,20 @@ export type CodigoTipoCotizacion = TipoCotizacion["codigo"];
 /**
  * PRODUCTO (tabla `producto_credito` de Supabase, filtrada por el
  * `tipo_cotizacion` de su perfil). Ya no se define aquí: se carga en
- * `src/lib/catalogo.ts`. No aporta puntos al puntaje.
+ * `src/lib/catalogo.ts`. El perfil y el rango de ingreso forman la
+ * categorización del cliente.
  */
 export type Producto = {
   id: string;
   etiqueta: string;
   /** Nombre del perfil al que pertenece (tabla `perfil`). */
   perfil: string;
+  /** Rango de ingreso neto mensual del producto (tabla `rango_ingreso`), extremos incluidos. */
+  ingresoMinimo: number;
+  /** null = "en adelante". */
+  ingresoMaximo: number | null;
+  /** Texto del rango tal como está en la matriz original (p. ej. "$563,03 - $1044,02"). */
+  rangoIngreso: string;
   /** Tasa de interés anual (0.18 = 18 %). Columna `tasa`. */
   tasaAnual: number;
   /** Plazo en meses. Columna `plazo` (puede venir vacía). */
@@ -62,14 +60,7 @@ export const MONEDA = {
   locale: "es-US",
 };
 
-export const PROVINCIAS: Opcion[] = [
-  { id: "prov-a", etiqueta: "Provincia A", puntos: 10 },
-  { id: "prov-b", etiqueta: "Provincia B", puntos: 8 },
-  { id: "prov-c", etiqueta: "Provincia C", puntos: 6 },
-  { id: "prov-d", etiqueta: "Provincia D", puntos: 4 },
-];
-
-/** Promotor independiente: Sí / No. No aporta puntos; es solo informativo. */
+/** Promotor independiente: Sí / No. Es solo informativo. */
 export const PROMOTOR_INDEPENDIENTE = [
   { id: "si", etiqueta: "Sí" },
   { id: "no", etiqueta: "No" },
@@ -77,25 +68,10 @@ export const PROMOTOR_INDEPENDIENTE = [
 
 export type PromotorIndependiente = (typeof PROMOTOR_INDEPENDIENTE)[number]["id"];
 
-/**
- * Umbrales sobre el puntaje de CRITERIOS. Con solo Provincia el máximo es 10:
- * ajústalos cuando tengas los valores reales.
- */
 export const UMBRALES = {
-  /** Puntaje mínimo para riesgo BAJO. */
-  riesgoBajo: 7,
-  /** Puntaje mínimo para riesgo MEDIO (por debajo es ALTO). */
-  riesgoMedio: 5,
-  /** Relación cuota / ingreso neto aceptable (0.40 = 40 %). */
+  /**
+   * Relación cuota / ingreso neto aceptable (0.40 = 40 %). Un producto cuya cuota
+   * la supere no se sugiere, y define el monto máximo sugerido.
+   */
   relacionCuotaMax: 0.4,
 };
-
-/**
- * Criterios que puntúan, mostrados como menús desplegables, en orden.
- * El producto no está aquí: sus opciones vienen de Supabase y no puntúa.
- */
-export const CRITERIOS = [
-  { clave: "provincia", titulo: "Provincia", opciones: PROVINCIAS },
-] as const;
-
-export type ClaveCriterio = (typeof CRITERIOS)[number]["clave"];
