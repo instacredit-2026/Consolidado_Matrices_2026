@@ -69,25 +69,13 @@ export const PROVINCIAS: Opcion[] = [
   { id: "prov-d", etiqueta: "Provincia D", puntos: 4 },
 ];
 
-/** Promotor independiente: Sí / No. No aporta puntos; se registra en el informe. */
+/** Promotor independiente: Sí / No. No aporta puntos; es solo informativo. */
 export const PROMOTOR_INDEPENDIENTE = [
   { id: "si", etiqueta: "Sí" },
   { id: "no", etiqueta: "No" },
 ] as const;
 
 export type PromotorIndependiente = (typeof PROMOTOR_INDEPENDIENTE)[number]["id"];
-
-/**
- * Importes APC: deudas del cliente en la APC. Cada fila tiene un detalle y un monto;
- * el importe final a considerar es monto × factor, y la suma de todos se agrega a la
- * cuota nueva al calcular la relación cuota / ingreso neto.
- */
-export const DETALLE_APC = [
-  { id: "1", etiqueta: "1 – Préstamo", factor: 1 },
-  { id: "2", etiqueta: "2 – Tarjeta de crédito", factor: 0.03 },
-] as const;
-
-export type DetalleApc = (typeof DETALLE_APC)[number]["id"];
 
 /**
  * Umbrales sobre el puntaje de CRITERIOS. Con solo Provincia el máximo es 10:
@@ -100,8 +88,6 @@ export const UMBRALES = {
   riesgoMedio: 5,
   /** Relación cuota / ingreso neto aceptable (0.40 = 40 %). */
   relacionCuotaMax: 0.4,
-  /** Por encima de esta relación la solicitud se rechaza. */
-  relacionCuotaRechazo: 0.5,
 };
 
 /**

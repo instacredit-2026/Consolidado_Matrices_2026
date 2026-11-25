@@ -9,7 +9,7 @@ import iconoPng from "@/assets/icono.png";
 
 export const metadata: Metadata = {
   title: "Matriz Automatizada · Instacredit",
-  description: "Evalúa solicitudes de crédito y genera un informe PDF.",
+  description: "Evalúa solicitudes de crédito y muestra el resultado.",
   icons: {
     icon: [{ url: iconoPng.src, type: "image/png" }],
     apple: iconoPng.src,

@@ -14,10 +14,6 @@ import { SELECCION_VACIA, type Resultado as R, type Solicitud } from "@/lib/calc
 import { calcular, reglasDe, validar } from "@/lib/cotizaciones";
 
 const INICIAL: DatosFormulario = {
-  cliente: "",
-  identificacion: "",
-  telefono: "",
-  correo: "",
   seleccion: SELECCION_VACIA,
   plazo: "",
   producto: "",
@@ -25,7 +21,6 @@ const INICIAL: DatosFormulario = {
   ingresoBruto: "",
   saldoActual: "",
   montoCliente: "",
-  importesApc: [],
 };
 
 /** Por debajo de este ancho el resultado queda debajo del formulario. */
@@ -33,10 +28,6 @@ const APILADO = "(max-width: 1199.98px)";
 
 const aSolicitud = (d: DatosFormulario, productos: Producto[], tipo: CodigoTipoCotizacion | null): Solicitud => ({
   tipoCotizacion: tipo ?? "",
-  cliente: d.cliente.trim(),
-  identificacion: d.identificacion.trim(),
-  telefono: d.telefono.trim(),
-  correo: d.correo.trim(),
   seleccion: d.seleccion,
   plazo: d.plazo ? Number(d.plazo) : null,
   producto: productos.find((p) => p.id === d.producto) ?? null,
@@ -44,7 +35,6 @@ const aSolicitud = (d: DatosFormulario, productos: Producto[], tipo: CodigoTipoC
   ingresoBruto: Number(d.ingresoBruto),
   saldoActual: Number(d.saldoActual || 0),
   montoCliente: Number(d.montoCliente),
-  importesApc: d.importesApc.map((f) => ({ detalle: f.detalle || null, monto: Number(f.monto) })),
 });
 
 const mensajeError = (e: unknown) =>
@@ -130,7 +120,7 @@ function Evaluacion() {
 
   const cambiar = (d: DatosFormulario) => {
     setDatos(d);
-    setResultado(null); // evita descargar un informe con datos desactualizados
+    setResultado(null); // evita mostrar un resultado con datos desactualizados
   };
 
   const onCalcular = () => {
@@ -211,7 +201,7 @@ function Evaluacion() {
         <div className="ic-section__head">
           <h1 ref={tituloRef} tabIndex={-1} className="ic-section-title">Evaluación de Solicitud</h1>
         </div>
-        <p className="ic-lead">Completa los criterios, calcula el resultado y descarga el informe en PDF.</p>
+        <p className="ic-lead">Completa los criterios, y calcula el resultado.</p>
 
         <div className="ic-context">
           <span>Tipo de cotización</span>

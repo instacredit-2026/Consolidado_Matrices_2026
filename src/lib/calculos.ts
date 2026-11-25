@@ -4,39 +4,19 @@
  */
 import {
   CRITERIOS,
-  DETALLE_APC,
   MONEDA,
   UMBRALES,
   type ClaveCriterio,
   type CodigoTipoCotizacion,
-  type DetalleApc,
   type Producto,
   type PromotorIndependiente,
 } from "@/config/matriz";
 import type { ParametrosCotizacion } from "@/lib/cotizaciones/base";
 import type { DesgloseIngreso } from "@/lib/cotizaciones/ingresoNeto";
 
-/** Fila de Importes APC. `detalle` es null si no se eligió. */
-export type ImporteApc = { detalle: DetalleApc | null; monto: number };
-
-export type DetalleImporteApc = { detalle: DetalleApc; etiqueta: string; monto: number; importeFinal: number };
-
-/** Importe final a considerar de una fila: monto × factor del detalle (0 si falta el detalle). */
-export function importeFinalApc(detalle: DetalleApc | null | "", monto: number): number {
-  const d = DETALLE_APC.find((x) => x.id === detalle);
-  return d && monto > 0 ? monto * d.factor : 0;
-}
-
-/** Una fila sin detalle ni monto no cuenta (se ignora). */
-export const filaApcVacia = (f: ImporteApc) => !f.detalle && !(f.monto > 0);
-
 export type Solicitud = {
   /** Tipo de cotización elegido (PV, DD, EP, PYME…); decide qué reglas se aplican. */
   tipoCotizacion: CodigoTipoCotizacion;
-  cliente: string;
-  identificacion: string;
-  telefono: string;
-  correo: string;
   seleccion: Record<ClaveCriterio, string>;
   /** Plazo elegido en meses (columna plazo de producto_credito), o null si falta. */
   plazo: number | null;
@@ -49,12 +29,9 @@ export type Solicitud = {
   saldoActual: number;
   /** Monto total del préstamo nuevo; es el monto que se financia. */
   montoCliente: number;
-  /** Deudas del cliente en la APC (puede estar vacía). */
-  importesApc: ImporteApc[];
 };
 
 export type NivelRiesgo = "Bajo" | "Medio" | "Alto";
-export type Decision = "Aprobado" | "En revisión" | "Rechazado";
 
 export type DetalleCriterio = {
   titulo: string;
@@ -77,18 +54,11 @@ export type Resultado = {
   nivelRiesgo: NivelRiesgo;
   cuotaMensual: number;
   totalAPagar: number;
-  /** Filas de Importes APC consideradas (sin las vacías). */
-  importesApc: DetalleImporteApc[];
-  /** Suma de los importes finales APC; se agrega a la cuota en la relación. */
-  totalApc: number;
-  /** (cuota + total APC) / ingreso neto. */
+  /** Cuota / ingreso neto. */
   relacionCuotaIngreso: number;
   montoMaximoSugerido: number;
   /** Lo que recibe el cliente: monto cliente − saldo actual. */
   montoAEntregar: number;
-  decision: Decision;
-  motivos: string[];
-  advertencias: string[];
 };
 
 export const SELECCION_VACIA = Object.fromEntries(
@@ -116,11 +86,6 @@ export function nivelDeRiesgo(
   if (puntaje >= umbrales.riesgoBajo) return "Bajo";
   if (puntaje >= umbrales.riesgoMedio) return "Medio";
   return "Alto";
-}
-
-/** Comprobación básica de formato de correo (algo@dominio.ext). */
-export function correoValido(correo: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim());
 }
 
 const fmtMoneda = new Intl.NumberFormat(MONEDA.locale, {
